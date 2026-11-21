@@ -1,0 +1,72 @@
+/* DS-002 — Prime Grill: tokens de design (fonte: DS-001 v1.0.0) */
+
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap");
+
+:root {
+  /* Marca */
+  --pg-carvao: #0C0B0A;
+  --pg-carvao-2: #141210;
+  --pg-carvao-3: #1C1916;
+  --pg-osso: #F4ECDC;
+  --pg-dourado: #D4A94E;
+  --pg-dourado-escuro: #A9843A;
+  --pg-dourado-claro: #E9C878;
+  --pg-dourado-texto: #7A5C1E;
+  --pg-brasa: #C3681F; /* somente marketing */
+  --pg-degrade-titulo: linear-gradient(180deg, #E9C878 0%, #C99A3C 55%, #A97C26 100%);
+
+  /* Tipografia */
+  --pg-font-display: "Playfair Display", Georgia, serif;
+  --pg-font-impacto: "Bebas Neue", Impact, sans-serif;
+  --pg-font-texto: "Figtree", system-ui, sans-serif;
+  --pg-font-dados: "Inter", system-ui, sans-serif;
+
+  /* Forma */
+  --pg-raio-erp: 6px;
+  --pg-raio-marca: 16px;
+  --pg-raio-pilula: 999px;
+  --pg-filete: 1px solid var(--pg-dourado-escuro);
+
+  /* Tema Papel (padrão do ERP) */
+  --cor-fundo: #FAF7F2;
+  --cor-superficie: #FFFFFF;
+  --cor-superficie-2: #F3EEE6;
+  --cor-borda: #E7DFD2;
+  --cor-texto: #1A1714;
+  --cor-texto-2: #6E655C;
+  --cor-acao: #1A1714;
+  --cor-acao-texto: #F4ECDC;
+  --cor-destaque: #A9843A;
+  --cor-destaque-texto: #7A5C1E;
+  --cor-sucesso: #3F7F57;
+  --cor-atencao: #A8661C;
+  --cor-erro: #C8463D;
+  --cor-info: #3F6E99;
+}
+
+/* Tema Carvão (vitrine, Studio, opcional no ERP) */
+[data-tema="carvao"] {
+  --cor-fundo: #0C0B0A;
+  --cor-superficie: #141210;
+  --cor-superficie-2: #1C1916;
+  --cor-borda: #2E2925;
+  --cor-texto: #F4ECDC;
+  --cor-texto-2: #A89F92;
+  --cor-acao: #D4A94E;
+  --cor-acao-texto: #0C0B0A;
+  --cor-destaque: #D4A94E;
+  --cor-destaque-texto: #D4A94E;
+  --cor-sucesso: #6FBF8E;
+  --cor-atencao: #E3A14A;
+  --cor-erro: #E07A70;
+  --cor-info: #7FAFD9;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cor-destaque);
+  outline-offset: 2px;
+}
+
+.pg-num { font-family: var(--pg-font-dados); font-variant-numeric: tabular-nums; }
+.pg-preco { font-family: var(--pg-font-display); font-weight: 700; color: var(--cor-destaque-texto); }
+.pg-preco__unidade { font-family: var(--pg-font-texto); font-size: .5em; font-weight: 600; letter-spacing: .12em; }
