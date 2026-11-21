@@ -54,7 +54,9 @@ async function main() {
   const cats = new Map((await db.select().from(categorias)).map((c) => [c.slug, c.id]));
 
   let novos = 0;
-  for (const [ordem, i] of ITENS.entries()) {
+  const jaTemProdutos = (await db.select({ id: produtos.id }).from(produtos).limit(1)).length > 0;
+  // Só popula um banco vazio: nunca recria produtos que a loja renomeou ou ajustou no painel.
+  for (const [ordem, i] of jaTemProdutos ? [] : ITENS.entries()) {
     const ja = await db.select({ id: produtos.id }).from(produtos).where(eq(produtos.slug, i.slug));
     if (ja.length) continue;
     await db.insert(produtos).values({

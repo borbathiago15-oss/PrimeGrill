@@ -22,9 +22,9 @@ npm run dev
 
 1. Criar um PostgreSQL gerenciado (Supabase, Neon ou Vercel Postgres) e copiar a URL.
 2. Na Vercel: importar o repositório com **Root Directory = `loja`**.
-3. Variáveis de ambiente: `DATABASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `SESSION_SECRET` e `BLOB_READ_WRITE_TOKEN` (criar um Blob Store no projeto).
-4. O comando `vercel-build` aplica as migrations antes do build.
-5. Catálogo inicial (uma vez): `DATABASE_URL=... npm run db:seed`.
+3. Em Storage, conectar um banco **Neon** (cria `DATABASE_URL`) e um **Blob** (cria `BLOB_STORE_ID`) ao projeto.
+4. Variáveis de ambiente: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+) e `SESSION_SECRET` (32+).
+5. O comando `vercel-build` aplica as migrations e, só se o banco estiver vazio, cadastra o catálogo inicial antes do build.
 
 ## Antes de abrir ao público
 

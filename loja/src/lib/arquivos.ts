@@ -21,12 +21,13 @@ export async function salvarFoto(arquivo: File): Promise<{ ok: true; url: string
   if (!tipo) return { ok: false, erro: "Envie uma foto JPG, PNG ou WebP." };
   const nome = `produtos/${randomUUID()}.${tipo}`;
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+  // Na Vercel, o Blob conectado ao projeto expõe BLOB_STORE_ID (autenticação OIDC) ou um token de leitura/escrita.
+  if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) {
     const { put } = await import("@vercel/blob");
     const r = await put(nome, Buffer.from(bytes), { access: "public", contentType: `image/${tipo === "jpg" ? "jpeg" : tipo}` });
     return { ok: true, url: r.url };
   }
-  if (process.env.NODE_ENV === "production") return { ok: false, erro: "Armazenamento de fotos não configurado (BLOB_READ_WRITE_TOKEN)." };
+  if (process.env.NODE_ENV === "production") return { ok: false, erro: "Armazenamento de fotos não configurado (conecte um Blob ao projeto)." };
   const destino = path.join(process.cwd(), "public", "uploads", nome);
   await mkdir(path.dirname(destino), { recursive: true });
   await writeFile(destino, bytes);
