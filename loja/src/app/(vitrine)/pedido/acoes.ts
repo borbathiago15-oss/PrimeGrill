@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db, schema } from "@/db";
 import { configLoja } from "@/lib/dados";
 import { calcularFrete } from "@/lib/geo";
+import { comEstoqueReal, travarSaldo } from "@/lib/estoque";
 import { calcularPedido, type ProdutoParaCalculo } from "@/modules/pedidos/calculo";
 import { formatarCelular, normalizarCelular } from "@/modules/pedidos/whatsapp";
 
@@ -46,7 +47,7 @@ export async function criarPedido(dados: unknown): Promise<ResultadoPedido> {
   const banco = await db();
   const { produtos, pedidos, pedidoItens, pedidoEventos } = schema;
   const ids = [...new Set(d.itens.map((i) => i.produtoId))];
-  const linhas = await banco.select().from(produtos).where(inArray(produtos.id, ids));
+  const linhas = await comEstoqueReal(banco, await banco.select().from(produtos).where(inArray(produtos.id, ids)));
   const mapa = new Map<number, ProdutoParaCalculo>(linhas.map((p) => [p.id, p]));
 
   let zona: { taxaCentavos: number; pedidoMinimoCentavos: number } | null = null;
@@ -79,7 +80,17 @@ export async function criarPedido(dados: unknown): Promise<ResultadoPedido> {
   if (!calc.ok) return calc;
 
   const codigo = novoCodigo();
-  await banco.transaction(async (tx) => {
+  const esgotou = await banco.transaction(async (tx) => {
+    // Revalida o estoque com os saldos travados: dois clientes não levam a última peça (EST-001 §5).
+    const controlados = linhas.filter((p) => p.controlaEstoque).map((p) => p.id).sort((a, b) => a - b);
+    for (const id of controlados) await travarSaldo(tx, id);
+    if (controlados.length) {
+      const agora = await comEstoqueReal(tx, linhas.filter((p) => p.controlaEstoque));
+      for (const p of agora) {
+        const pedido = d.itens.filter((i) => i.produtoId === p.id).reduce((s, i) => s + i.quantidade, 0);
+        if ((p.quantidadeDisponivel ?? 0) < pedido) return p.nome;
+      }
+    }
     const [p] = await tx
       .insert(pedidos)
       .values({
@@ -106,6 +117,8 @@ export async function criarPedido(dados: unknown): Promise<ResultadoPedido> {
       .returning({ id: pedidos.id });
     await tx.insert(pedidoItens).values(calc.itens.map((i) => ({ pedidoId: p.id, ...i })));
     await tx.insert(pedidoEventos).values({ pedidoId: p.id, status: "NOVO", nota: "Pedido feito pela loja online", autor: "cliente" });
+    return null;
   });
+  if (esgotou) return { ok: false, erro: `${esgotou} acabou de esgotar. Ajuste o carrinho.` };
   return { ok: true, codigo };
 }

@@ -15,6 +15,13 @@
       "when": 1795293525797,
       "tag": "0001_frete_distancia",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795303867125,
+      "tag": "0002_estoque_notas",
+      "breakpoints": true
     }
   ]
 }

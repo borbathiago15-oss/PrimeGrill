@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 const ITENS = [
   { href: "/admin", texto: "Pedidos", exato: true },
   { href: "/admin/produtos", texto: "Produtos e preços" },
+  { href: "/admin/estoque", texto: "Estoque" },
+  { href: "/admin/notas", texto: "Notas de entrada" },
   { href: "/admin/configuracoes", texto: "Loja e entregas" },
 ];
 

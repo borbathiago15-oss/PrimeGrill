@@ -190,3 +190,10 @@ tr.link:hover td { background: #FCF8F0; }
 .etapas li.feita::after { background: var(--dourado-esc); }
 .etapas li.atual::before { border-color: var(--dourado); box-shadow: 0 0 0 4px rgba(212,169,78,.18); }
 .etapas small { display: block; font-weight: 400; color: var(--osso-2); font-size: 12px; margin-top: 2px; }
+
+/* painel: estoque e notas */
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.kpi { padding: 16px 18px; }
+.kpi b { display: block; font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.kpi small { color: var(--texto-2); font-size: 12.5px; }

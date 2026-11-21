@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { CONFIG_PADRAO } from "@/modules/loja/horario";
+import { comEstoqueReal } from "@/lib/estoque";
 import type { ConfigLoja } from "@/db/schema";
 
 const { produtos, categorias, configuracoes } = schema;
@@ -16,8 +17,10 @@ export async function catalogoPublico(): Promise<{ categoria: { slug: string; no
     .innerJoin(categorias, eq(produtos.categoriaId, categorias.id))
     .where(eq(produtos.ativo, true))
     .orderBy(asc(categorias.ordem), asc(produtos.ordem), asc(produtos.nome));
+  const reais = await comEstoqueReal(d, linhas.map((l) => l.p));
   const grupos = new Map<string, { categoria: { slug: string; nome: string }; itens: ProdutoVitrine[] }>();
-  for (const { p, c } of linhas) {
+  for (const [i, { c }] of linhas.entries()) {
+    const p = reais[i];
     if (!grupos.has(c.slug)) grupos.set(c.slug, { categoria: { slug: c.slug, nome: c.nome }, itens: [] });
     grupos.get(c.slug)!.itens.push({ ...p, categoriaNome: c.nome, categoriaSlug: c.slug });
   }
@@ -31,7 +34,9 @@ export async function produtoPublico(slug: string): Promise<ProdutoVitrine | nul
     .from(produtos)
     .innerJoin(categorias, eq(produtos.categoriaId, categorias.id))
     .where(and(eq(produtos.slug, slug), eq(produtos.ativo, true)));
-  return r ? { ...r.p, categoriaNome: r.c.nome, categoriaSlug: r.c.slug } : null;
+  if (!r) return null;
+  const [p] = await comEstoqueReal(d, [r.p]);
+  return { ...p, categoriaNome: r.c.nome, categoriaSlug: r.c.slug };
 }
 
 export async function configLoja(): Promise<ConfigLoja> {

@@ -91,3 +91,4 @@
 | 2026-11-21 | Primeira gravação da documentação no repositório (branch `docs/fundacao-documental`) |
 | 2026-11-21 | ADR-001 aceita (Next.js + PostgreSQL + Vercel); início do MVP da loja online (ECM-001 §8) |
 | 2026-11-21 | Entrega por distância (faixas em km a partir do endereço da loja) substitui zonas por bairro; acompanhamento do pedido para o cliente (ECM-001 §8.1) |
+| 2026-11-21 | Implementados EST-001 (estoque por movimentações, custo médio, quebra, ajuste), REC-001 canais XML e digitação (SEFAZ aguarda certificado A1; PDF ainda não) e baixa de estoque na separação/pesagem com estorno no cancelamento |

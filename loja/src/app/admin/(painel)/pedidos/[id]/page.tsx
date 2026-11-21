@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { mudarStatus } from "../../acoes";
 import { CalculadoraPesagem } from "./calculadora";
 import { ROTULO_STATUS, pedidoCompleto } from "@/lib/pedidos";
+import { db, schema } from "@/db";
+import { eq } from "drizzle-orm";
 import { configLoja } from "@/lib/dados";
 import { formatarDistancia } from "@/modules/entrega/frete";
 import { STATUS_PEDIDO } from "@/db/schema";
@@ -16,6 +18,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
   const [dados, config] = await Promise.all([pedidoCompleto({ id: Number(id) }), configLoja()]);
   if (!dados) notFound();
   const { pedido: p, itens, eventos } = dados;
+  const pesagens = await (await db()).select().from(schema.pedidoPesagens).where(eq(schema.pedidoPesagens.pedidoId, p.id));
   const st = ROTULO_STATUS[p.status];
   const celular = "55" + p.clienteCelular.replace(/\D/g, "");
   const destino = [p.endereco && `${p.endereco}, ${p.numero}`, p.bairro, p.cidade, p.cep].filter(Boolean).join(", ");
@@ -74,14 +77,23 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
                 {p.freteACombinar ? "a confirmar com o cliente" : formatarReais(p.freteCentavos)}
                 {p.distanciaMetros ? ` · ${formatarDistancia(p.distanciaMetros)}` : ""}
               </dd>
+              {p.totalFinalCentavos !== null && (
+                <>
+                  <dt>Total final</dt>
+                  <dd className="num" style={{ fontWeight: 700, color: "var(--ok)" }}>{formatarReais(p.totalFinalCentavos)}</dd>
+                </>
+              )}
               <dt>Total {p.temItemPesado ? "estimado" : ""}</dt>
               <dd className="num" style={{ fontWeight: 700 }}>
                 {formatarReais(p.totalEstimadoCentavos)}
               </dd>
             </dl>
           </div>
-          {p.temItemPesado && (
+          {p.status !== "CANCELADO" && (
             <CalculadoraPesagem
+              pedidoId={p.id}
+              baixaFeita={p.baixaEstoque}
+              pesagens={pesagens.map((x) => ({ itemId: x.itemId, peca: x.peca, gramas: x.gramas, valorCentavos: x.valorCentavos }))}
               codigo={p.codigo}
               celularCliente={celular}
               freteCentavos={p.freteCentavos}

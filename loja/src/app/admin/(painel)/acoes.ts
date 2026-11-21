@@ -30,13 +30,17 @@ export async function mudarStatus(form: FormData) {
   const id = Number(form.get("id"));
   const status = z.enum(STATUS_PEDIDO).parse(form.get("status"));
   const nota = String(form.get("nota") ?? "").trim().slice(0, 300);
+  if (status === "CANCELADO") {
+    const { estornarPedido } = await import("@/lib/estorno");
+    await estornarPedido(id, autor);
+  }
   const banco = await db();
   await banco.transaction(async (tx) => {
     await tx.update(pedidos).set({ status, atualizadoEm: new Date() }).where(eq(pedidos.id, id));
     await tx.insert(pedidoEventos).values({ pedidoId: id, status, nota, autor });
   });
   revalidatePath(`/admin/pedidos/${id}`);
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
 }
 
 /* ---------------- Produtos ---------------- */
