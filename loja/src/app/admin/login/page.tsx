@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { adminConfigurado, credenciaisValidas } from "@/lib/admin";
+import { credenciaisValidas, pendenciasAdmin } from "@/lib/admin";
 import { COOKIE, criarToken, OPCOES_COOKIE } from "@/lib/sessao";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,8 @@ async function entrar(form: FormData) {
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
   const { erro } = await searchParams;
-  const configurado = adminConfigurado();
+  const pendencias = pendenciasAdmin();
+  const configurado = pendencias.length === 0;
   return (
     <div className="login">
       <form action={entrar}>
@@ -36,7 +37,11 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           <img src="/marca/logo-preta.png" alt="Prime Grill Paiva" style={{ height: 40 }} />
         </div>
         <h1>Painel da loja</h1>
-        {!configurado && <p className="msg-erro">Acesso não configurado. Defina ADMIN_EMAIL, ADMIN_PASSWORD (12+ caracteres) e SESSION_SECRET (32+).</p>}
+        {!configurado && (
+          <p className="msg-erro">
+            Acesso não configurado: {pendencias.join("; ")}. Ajuste em Vercel → Configurações → Variáveis de ambiente e publique de novo.
+          </p>
+        )}
         {erro === "1" && <p className="msg-erro">E-mail ou senha incorretos.</p>}
         {erro === "bloqueado" && <p className="msg-erro">Muitas tentativas. Aguarde 15 minutos.</p>}
         <div className="f">

@@ -25,6 +25,19 @@ export function credenciaisValidas(email: string, senha: string): boolean {
   return okEmail && okSenha;
 }
 
+/** Lista o que falta na configuração do acesso (nunca expõe valores, só a regra não atendida). */
+export function pendenciasAdmin(): string[] {
+  const p: string[] = [];
+  const email = process.env.ADMIN_EMAIL?.trim() ?? "";
+  const senha = process.env.ADMIN_PASSWORD ?? "";
+  if (!email) p.push("ADMIN_EMAIL não encontrado");
+  else if (!email.includes("@")) p.push("ADMIN_EMAIL não parece um e-mail");
+  if (!senha) p.push("ADMIN_PASSWORD não encontrado");
+  else if (senha.length < 12) p.push("ADMIN_PASSWORD tem menos de 12 caracteres");
+  if ((process.env.SESSION_SECRET?.length ?? 0) < 32) p.push("SESSION_SECRET ausente ou curto");
+  return p;
+}
+
 export function adminConfigurado(): boolean {
-  return Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length >= 12 && (process.env.SESSION_SECRET?.length ?? 0) >= 32);
+  return pendenciasAdmin().length === 0;
 }
