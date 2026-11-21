@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { mudarStatus } from "../../acoes";
 import { CalculadoraPesagem } from "./calculadora";
 import { ROTULO_STATUS, pedidoCompleto } from "@/lib/pedidos";
+import { configLoja } from "@/lib/dados";
+import { formatarDistancia } from "@/modules/entrega/frete";
 import { STATUS_PEDIDO } from "@/db/schema";
 import { formatarKg, formatarReais, formatarValor } from "@/modules/dinheiro";
 
@@ -11,11 +13,14 @@ const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Recife", day:
 
 export default async function DetalhePedido({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const dados = await pedidoCompleto({ id: Number(id) });
+  const [dados, config] = await Promise.all([pedidoCompleto({ id: Number(id) }), configLoja()]);
   if (!dados) notFound();
   const { pedido: p, itens, eventos } = dados;
   const st = ROTULO_STATUS[p.status];
   const celular = "55" + p.clienteCelular.replace(/\D/g, "");
+  const destino = [p.endereco && `${p.endereco}, ${p.numero}`, p.bairro, p.cidade, p.cep].filter(Boolean).join(", ");
+  const origem = config.entrega.lat !== null ? `${config.entrega.lat},${config.entrega.lng}` : config.entrega.endereco;
+  const rota = p.modo === "ENTREGA" ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}` : null;
 
   return (
     <>
@@ -65,7 +70,10 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
             </table>
             <dl className="kv">
               <dt>Frete</dt>
-              <dd className="num">{formatarReais(p.freteCentavos)}</dd>
+              <dd className="num">
+                {p.freteACombinar ? "a confirmar com o cliente" : formatarReais(p.freteCentavos)}
+                {p.distanciaMetros ? ` · ${formatarDistancia(p.distanciaMetros)}` : ""}
+              </dd>
               <dt>Total {p.temItemPesado ? "estimado" : ""}</dt>
               <dd className="num" style={{ fontWeight: 700 }}>
                 {formatarReais(p.totalEstimadoCentavos)}
@@ -77,6 +85,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               codigo={p.codigo}
               celularCliente={celular}
               freteCentavos={p.freteCentavos}
+              freteACombinar={p.freteACombinar}
               itens={itens.map((i) => ({ id: i.id, nome: i.nome, tipoVenda: i.tipoVenda, precoCentavos: i.precoCentavos, quantidade: i.quantidade }))}
             />
           )}
@@ -97,8 +106,16 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               <dt>Recebimento</dt>
               <dd>
                 {p.modo === "ENTREGA"
-                  ? `${p.endereco}, ${p.numero}${p.complemento ? `, ${p.complemento}` : ""} — ${p.bairro}${p.cep ? ` · CEP ${p.cep}` : ""}`
+                  ? `${p.endereco}, ${p.numero}${p.complemento ? `, ${p.complemento}` : ""} — ${p.bairro}${p.cidade ? `, ${p.cidade}` : ""}${p.cep ? ` · CEP ${p.cep}` : ""}`
                   : "Retirada na loja"}
+                {rota && (
+                  <>
+                    <br />
+                    <a href={rota} target="_blank" rel="noopener noreferrer" style={{ color: "var(--info)", fontWeight: 600 }}>
+                      Ver rota no mapa ↗
+                    </a>
+                  </>
+                )}
               </dd>
               {p.observacao && (
                 <>

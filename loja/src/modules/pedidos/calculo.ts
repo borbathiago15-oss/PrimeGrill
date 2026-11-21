@@ -75,8 +75,8 @@ export function calcularPedido(
   }
   let frete = 0;
   if (modo === "ENTREGA") {
-    if (!zona) return { ok: false, erro: "Escolha um bairro atendido para entrega." };
-    if (subtotal < zona.pedidoMinimoCentavos) return { ok: false, erro: "O pedido não atinge o valor mínimo para este bairro." };
+    if (!zona) return { ok: false, erro: "Informe um CEP atendido para entrega." };
+    if (subtotal < zona.pedidoMinimoCentavos) return { ok: false, erro: "O pedido não atinge o valor mínimo para entrega neste endereço." };
     frete = zona.taxaCentavos;
   }
   return {

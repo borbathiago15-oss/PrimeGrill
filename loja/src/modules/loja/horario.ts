@@ -1,4 +1,5 @@
 import type { ConfigLoja, HorarioDia } from "@/db/schema";
+import { ENTREGA_PADRAO } from "../entrega/frete";
 
 export const FUSO = "America/Recife";
 export const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -55,4 +56,5 @@ export const CONFIG_PADRAO: ConfigLoja = {
   whatsapp: "5581998990694",
   retiradaAtiva: true,
   enderecoRetirada: "",
+  entrega: ENTREGA_PADRAO,
 };

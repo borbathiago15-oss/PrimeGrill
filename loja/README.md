@@ -4,7 +4,7 @@ Vitrine pública + pedido enviado ao WhatsApp + painel da loja. Escopo em `docs/
 
 ## O que tem
 
-- **Loja (`/`)**: cardápio por categoria, detalhe do produto, carrinho, checkout (entrega por bairro ou retirada), pedido salvo e botão para enviar ao WhatsApp da loja.
+- **Loja (`/`)**: cardápio por categoria, detalhe do produto, carrinho, checkout (entrega com frete por distância a partir do CEP, ou retirada), pedido salvo e botão para enviar ao WhatsApp da loja.
 - **Peça inteira**: R$/kg + valor aproximado (se houver peso médio); o cliente paga o peso real. **Pacote**: preço fixo.
 - **Painel (`/admin`)**: pedidos com status e histórico, **calculadora de pesagem** (peso real → valor final → mensagem ao cliente), produtos e preços com foto, disponibilidade, horários, pausa da loja, WhatsApp e bairros de entrega.
 - Regras em `src/modules` com testes (`npm test`): centavos e gramas inteiros, cálculo do pedido, mensagem do WhatsApp, horário da loja.
@@ -30,5 +30,5 @@ npm run dev
 
 - Revisar **todos os preços** (vieram dos encartes de setembro/2026).
 - Cadastrar o **peso médio** das peças inteiras (sem ele, a loja mostra só o R$/kg).
-- Configurar **horários reais**, **endereço de retirada** e **bairros de entrega** com taxas.
+- Em **Loja e entregas**: endereço da loja (conferir o ponto no mapa), **faixas de frete por km**, horários reais e endereço de retirada.
 - Informar a disponibilidade real de cada produto.

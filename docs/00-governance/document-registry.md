@@ -90,3 +90,4 @@
 | 2026-11-21 | Princípio de alternativa manual aprovado; folder automático com saída em PDF e imagens; design padronizado pelo encarte publicado |
 | 2026-11-21 | Primeira gravação da documentação no repositório (branch `docs/fundacao-documental`) |
 | 2026-11-21 | ADR-001 aceita (Next.js + PostgreSQL + Vercel); início do MVP da loja online (ECM-001 §8) |
+| 2026-11-21 | Entrega por distância (faixas em km a partir do endereço da loja) substitui zonas por bairro; acompanhamento do pedido para o cliente (ECM-001 §8.1) |

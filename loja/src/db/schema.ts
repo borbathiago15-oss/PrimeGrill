@@ -1,4 +1,5 @@
-import { boolean, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import type { ConfigEntrega } from "@/modules/entrega/frete";
 
 /** Tipo de venda (CAT-001). Hoje apenas peça inteira (R$/kg, pesada na saída) e pacote (preço fixo). */
 export const TIPOS_VENDA = ["PECA", "PACOTE"] as const;
@@ -66,6 +67,7 @@ export type ConfigLoja = {
   whatsapp: string; // somente dígitos, com DDI: 5581998990694
   retiradaAtiva: boolean;
   enderecoRetirada: string;
+  entrega: ConfigEntrega;
 };
 
 export const pedidos = pgTable(
@@ -84,6 +86,11 @@ export const pedidos = pgTable(
     bairro: text("bairro"),
     zonaId: integer("zona_id").references(() => zonasEntrega.id),
     freteCentavos: integer("frete_centavos").notNull().default(0),
+    /** Distância estimada da loja até o cliente (frete por km). */
+    distanciaMetros: integer("distancia_metros"),
+    /** CEP não localizado automaticamente: frete confirmado depois pelo WhatsApp (PG-P-001). */
+    freteACombinar: boolean("frete_a_combinar").notNull().default(false),
+    cidade: text("cidade"),
     subtotalEstimadoCentavos: integer("subtotal_estimado_centavos").notNull(),
     totalEstimadoCentavos: integer("total_estimado_centavos").notNull(),
     temItemPesado: boolean("tem_item_pesado").notNull(),
@@ -115,5 +122,18 @@ export const pedidoEventos = pgTable("pedido_eventos", {
   status: text("status").$type<StatusPedido>().notNull(),
   nota: text("nota").notNull().default(""),
   autor: text("autor").notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Cache de localização por CEP (evita consultas repetidas aos serviços de mapa). */
+export const geoCache = pgTable("geo_cache", {
+  cep: text("cep").primaryKey(),
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
+  logradouro: text("logradouro").notNull().default(""),
+  bairro: text("bairro").notNull().default(""),
+  cidade: text("cidade").notNull().default(""),
+  uf: text("uf").notNull().default(""),
+  fonte: text("fonte").notNull().default(""),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
 });

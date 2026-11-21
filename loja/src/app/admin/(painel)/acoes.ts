@@ -10,8 +10,9 @@ import { exigirAdmin } from "@/lib/admin";
 import { salvarFoto } from "@/lib/arquivos";
 import { configLoja } from "@/lib/dados";
 import { kgParaGramas, reaisParaCentavos } from "@/modules/dinheiro";
+import { faixasOrdenadas, type Faixa } from "@/modules/entrega/frete";
 
-const { produtos, pedidos, pedidoEventos, configuracoes, zonasEntrega } = schema;
+const { produtos, pedidos, pedidoEventos, configuracoes } = schema;
 
 function slugify(s: string) {
   return s
@@ -133,6 +134,7 @@ export async function salvarConfig(_: EstadoForm, form: FormData): Promise<Estad
     whatsapp,
     retiradaAtiva: form.get("retiradaAtiva") === "on",
     enderecoRetirada: String(form.get("enderecoRetirada") ?? "").trim().slice(0, 120),
+    entrega: atual.entrega,
   };
   const banco = await db();
   await banco
@@ -143,28 +145,57 @@ export async function salvarConfig(_: EstadoForm, form: FormData): Promise<Estad
   return { ok: "Configurações salvas." };
 }
 
-export async function salvarZona(_: EstadoForm, form: FormData): Promise<EstadoForm> {
-  await exigirAdmin();
-  const bairro = String(form.get("bairro") ?? "").trim();
-  const taxa = reaisParaCentavos(String(form.get("taxa") ?? ""));
-  const minimoTxt = String(form.get("minimo") ?? "").trim();
-  const minimo = minimoTxt ? reaisParaCentavos(minimoTxt) : 0;
-  if (bairro.length < 2) return { erro: "Informe o bairro." };
-  if (taxa === null) return { erro: "Taxa inválida. Use o formato 9,90." };
-  if (minimo === null) return { erro: "Pedido mínimo inválido." };
-  const banco = await db();
-  await banco.insert(zonasEntrega).values({ bairro, taxaCentavos: taxa, prazo: String(form.get("prazo") ?? "").trim().slice(0, 30), pedidoMinimoCentavos: minimo });
-  revalidatePath("/admin/configuracoes");
-  revalidatePath("/pedido");
-  return { ok: `${bairro} adicionado.` };
-}
+const MAX_FAIXAS = 8; // espelha o formulário de entrega
 
-export async function alternarZona(form: FormData) {
+/** Endereço da loja (ponto de saída) e faixas de frete por distância. */
+export async function salvarEntrega(_: EstadoForm, form: FormData): Promise<EstadoForm> {
   await exigirAdmin();
-  const id = Number(form.get("id"));
+  const atual = await configLoja();
+  const endereco = String(form.get("endereco") ?? "").trim().slice(0, 160);
+  const latTxt = String(form.get("lat") ?? "").trim().replace(",", ".");
+  const lngTxt = String(form.get("lng") ?? "").trim().replace(",", ".");
+  const fatorTxt = String(form.get("fatorRota") ?? "1,3").trim().replace(",", ".");
+  const fatorRota = Number(fatorTxt);
+  if (!Number.isFinite(fatorRota) || fatorRota < 1 || fatorRota > 3) return { erro: "Fator de rota deve ficar entre 1,0 e 3,0." };
+
+  let lat: number | null = null;
+  let lng: number | null = null;
+  if (latTxt || lngTxt) {
+    lat = Number(latTxt);
+    lng = Number(lngTxt);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return { erro: "Latitude/longitude inválidas." };
+  } else if (endereco) {
+    const { geocodificarTexto } = await import("@/lib/geo");
+    const p = await geocodificarTexto(endereco);
+    if (!p) return { erro: "Não encontramos esse endereço no mapa. Confira o texto ou informe latitude e longitude manualmente." };
+    lat = p.lat;
+    lng = p.lng;
+  }
+
+  const faixas: Faixa[] = [];
+  for (let i = 0; i < MAX_FAIXAS; i++) {
+    const kmTxt = String(form.get(`km-${i}`) ?? "").trim().replace(",", ".");
+    const taxaTxt = String(form.get(`taxa-${i}`) ?? "").trim();
+    if (!kmTxt && !taxaTxt) continue;
+    const ateKm = Number(kmTxt);
+    const taxa = reaisParaCentavos(taxaTxt || "0");
+    const minTxt = String(form.get(`minimo-${i}`) ?? "").trim();
+    const minimo = minTxt ? reaisParaCentavos(minTxt) : 0;
+    if (!Number.isFinite(ateKm) || ateKm <= 0 || ateKm > 100) return { erro: `Faixa ${i + 1}: distância inválida.` };
+    if (taxa === null) return { erro: `Faixa ${i + 1}: taxa inválida (use 8,00).` };
+    if (minimo === null) return { erro: `Faixa ${i + 1}: pedido mínimo inválido.` };
+    faixas.push({ ateKm, taxaCentavos: taxa, prazo: String(form.get(`prazo-${i}`) ?? "").trim().slice(0, 30), pedidoMinimoCentavos: minimo });
+  }
+  if (new Set(faixas.map((f) => f.ateKm)).size !== faixas.length) return { erro: "Há duas faixas com a mesma distância." };
+  const ativa = form.get("ativa") === "on";
+  if (ativa && (lat === null || faixas.length === 0)) return { erro: "Para ativar a entrega, informe o endereço da loja e ao menos uma faixa." };
+
+  const dados: ConfigLoja = { ...atual, entrega: { ativa, endereco, lat, lng, fatorRota, faixas: faixasOrdenadas(faixas) } };
   const banco = await db();
-  const [z] = await banco.select({ a: zonasEntrega.ativo }).from(zonasEntrega).where(eq(zonasEntrega.id, id));
-  if (z) await banco.update(zonasEntrega).set({ ativo: !z.a }).where(eq(zonasEntrega.id, id));
-  revalidatePath("/admin/configuracoes");
-  revalidatePath("/pedido");
+  await banco
+    .insert(configuracoes)
+    .values({ id: 1, dados })
+    .onConflictDoUpdate({ target: configuracoes.id, set: { dados, atualizadoEm: new Date() } });
+  revalidatePath("/", "layout");
+  return { ok: ativa ? "Entrega salva e ativa." : "Entrega salva (desativada para os clientes)." };
 }

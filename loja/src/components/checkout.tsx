@@ -5,27 +5,31 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { resumoCarrinho, SeletorQuantidade, useCarrinho } from "./carrinho";
 import { criarPedido } from "@/app/(vitrine)/pedido/acoes";
+import { consultarFrete, type RespostaFrete } from "@/app/(vitrine)/pedido/frete";
 import { formatarReais, formatarValor } from "@/modules/dinheiro";
 import { valorAproximadoPeca } from "@/modules/pedidos/calculo";
 
 type Prod = { id: number; nome: string; fotoUrl: string | null; tipoVenda: "PECA" | "PACOTE"; precoCentavos: number; pesoMedioGramas: number | null };
-type Zona = { id: number; bairro: string; taxaCentavos: number; prazo: string; pedidoMinimoCentavos: number };
 
-export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: { produtos: Prod[]; zonas: Zona[]; retiradaAtiva: boolean; enderecoRetirada: string }) {
+export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, enderecoRetirada }: { produtos: Prod[]; entregaAtiva: boolean; raioKm: number; retiradaAtiva: boolean; enderecoRetirada: string }) {
   const { itens, produtos: resumo, limpar, pronto } = useCarrinho();
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
-  const entregaDisponivel = zonas.length > 0;
+  const entregaDisponivel = entregaAtiva;
   const [modo, setModo] = useState<"ENTREGA" | "RETIRADA">(entregaDisponivel ? "ENTREGA" : "RETIRADA");
-  const [zonaId, setZonaId] = useState<number | null>(null);
+  const [frete, setFrete] = useState<RespostaFrete | null>(null);
+  const [calculando, setCalculando] = useState(false);
+  const [bairro, setBairro] = useState("");
+  const [numero, setNumero] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [cep, setCep] = useState("");
   const [endereco, setEndereco] = useState("");
 
   const lista = produtos.filter((p) => itens[p.id]);
   const { total: subtotal, pesado } = resumoCarrinho(itens, resumo);
-  const zona = zonas.find((z) => z.id === zonaId) ?? null;
-  const frete = modo === "ENTREGA" && zona ? zona.taxaCentavos : 0;
+  const freteOk = frete?.tipo === "ok" ? frete : null;
+  const valorFrete = modo === "ENTREGA" && freteOk ? freteOk.taxaCentavos : 0;
+  const podeEnviar = modo === "RETIRADA" || frete?.tipo === "ok" || frete?.tipo === "a_combinar";
   const algumSemPeso = lista.some((p) => p.tipoVenda === "PECA" && !p.pesoMedioGramas);
 
   if (!pronto) return <div className="ck" />;
@@ -39,19 +43,20 @@ export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: {
       </div>
     );
 
-  async function buscarCep(valor: string) {
-    const d = valor.replace(/\D/g, "");
-    if (d.length !== 8) return;
+  async function calcular(cepAtual = cep, numeroAtual = numero) {
+    if (cepAtual.replace(/\D/g, "").length !== 8) return;
+    setCalculando(true);
     try {
-      const r = await fetch(`https://viacep.com.br/ws/${d}/json/`);
-      const j = await r.json();
-      if (!j.erro) {
-        setEndereco(j.logradouro ?? "");
-        const z = zonas.find((x) => x.bairro.localeCompare(j.bairro ?? "", "pt-BR", { sensitivity: "base" }) === 0);
-        if (z) setZonaId(z.id);
+      const r = await consultarFrete(cepAtual, numeroAtual);
+      setFrete(r);
+      if (r.tipo === "ok" || r.tipo === "a_combinar") {
+        if (!endereco && r.logradouro) setEndereco(r.logradouro);
+        if (!bairro && r.bairro) setBairro(r.bairro);
       }
     } catch {
-      /* sem CEP automático: o cliente preenche à mão */
+      setFrete({ tipo: "a_combinar", logradouro: "", bairro: "", cidade: "", uf: "" });
+    } finally {
+      setCalculando(false);
     }
   }
 
@@ -64,9 +69,9 @@ export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: {
       celular: String(form.get("celular") ?? ""),
       cep,
       endereco,
-      numero: String(form.get("numero") ?? ""),
+      numero,
+      bairro,
       complemento: String(form.get("complemento") ?? ""),
-      zonaId: modo === "ENTREGA" ? zonaId : null,
       observacao: String(form.get("observacao") ?? ""),
       consentimento: form.get("consentimento") === "on",
       optin: form.get("optin") === "on",
@@ -121,14 +126,14 @@ export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: {
           </div>
           {modo === "ENTREGA" && (
             <div className="r">
-              <span>Frete{zona ? ` · ${zona.bairro}` : ""}</span>
-              <span className="num">{zona ? formatarReais(frete) : "escolha o bairro"}</span>
+              <span>Frete{freteOk ? ` · ${freteOk.distancia}` : ""}</span>
+              <span className="num">{freteOk ? formatarReais(valorFrete) : frete?.tipo === "a_combinar" ? "a confirmar" : "informe o CEP"}</span>
             </div>
           )}
           <div className="r f">
             <span>Total{pesado ? " estimado" : ""}</span>
             <span className="preco num">
-              {formatarReais(subtotal + frete)}
+              {formatarReais(subtotal + valorFrete)}
               {algumSemPeso ? <small> + peças a pesar</small> : null}
             </span>
           </div>
@@ -146,7 +151,7 @@ export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: {
         <div className="opcoes">
           <button type="button" className="opcao" aria-pressed={modo === "ENTREGA"} disabled={!entregaDisponivel} onClick={() => setModo("ENTREGA")}>
             Entrega
-            <small>{entregaDisponivel ? "frete conforme o bairro" : "em breve"}</small>
+            <small>{entregaDisponivel ? `frete pela distância · até ${raioKm} km` : "em breve"}</small>
           </button>
           <button type="button" className="opcao" aria-pressed={modo === "RETIRADA"} disabled={!retiradaAtiva} onClick={() => setModo("RETIRADA")}>
             Retirada na loja
@@ -158,39 +163,57 @@ export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: {
             <div className="duo">
               <div className="campo">
                 <label htmlFor="cep">CEP</label>
-                <input id="cep" inputMode="numeric" autoComplete="postal-code" value={cep} onChange={(e) => setCep(e.target.value)} onBlur={(e) => buscarCep(e.target.value)} placeholder="00000-000" />
+                <input
+                  id="cep"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  value={cep}
+                  onChange={(e) => {
+                    setCep(e.target.value);
+                    setFrete(null);
+                    if (e.target.value.replace(/\D/g, "").length === 8) calcular(e.target.value);
+                  }}
+                  placeholder="00000-000"
+                  required
+                />
               </div>
               <div className="campo">
-                <label htmlFor="zona">Bairro</label>
-                <select id="zona" value={zonaId ?? ""} onChange={(e) => setZonaId(e.target.value ? Number(e.target.value) : null)} required>
-                  <option value="">Escolha…</option>
-                  {zonas.map((z) => (
-                    <option key={z.id} value={z.id}>
-                      {z.bairro} · {formatarReais(z.taxaCentavos)}
-                      {z.prazo ? ` · ${z.prazo}` : ""}
-                    </option>
-                  ))}
-                </select>
+                <label htmlFor="numero">Número</label>
+                <input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} onBlur={() => frete?.tipo !== "ok" && calcular()} required maxLength={15} />
               </div>
             </div>
-            {zona && zona.pedidoMinimoCentavos > 0 && (
-              <small style={{ color: "var(--osso-2)" }}>Pedido mínimo para {zona.bairro}: {formatarReais(zona.pedidoMinimoCentavos)}</small>
+            {calculando && <p className="aviso">Calculando o frete…</p>}
+            {!calculando && freteOk && (
+              <p className="aviso">
+                Entregamos no seu endereço: <b>{freteOk.distancia}</b> da loja · frete <b>{formatarReais(freteOk.taxaCentavos)}</b>
+                {freteOk.prazo ? ` · ${freteOk.prazo}` : ""}
+                {freteOk.pedidoMinimoCentavos > 0 ? ` · pedido mínimo ${formatarReais(freteOk.pedidoMinimoCentavos)}` : ""}
+              </p>
             )}
+            {!calculando && frete?.tipo === "fora" && (
+              <p className="erro-box">
+                Seu endereço fica a {frete.distancia} da loja, fora da nossa área de entrega (até {frete.raioKm} km). Escolha retirada na loja.
+              </p>
+            )}
+            {!calculando && frete?.tipo === "a_combinar" && (
+              <p className="aviso">Não conseguimos calcular o frete automaticamente para este CEP. Você pode enviar o pedido: confirmamos o frete pelo WhatsApp.</p>
+            )}
+            {!calculando && frete?.tipo === "cep_invalido" && <p className="erro-box">CEP não encontrado. Confira o número.</p>}
+            {!calculando && frete?.tipo === "indisponivel" && <p className="erro-box">Entrega indisponível no momento. Escolha retirada na loja.</p>}
             <div className="campo">
               <label htmlFor="endereco">Endereço</label>
               <input id="endereco" autoComplete="address-line1" value={endereco} onChange={(e) => setEndereco(e.target.value)} required maxLength={120} />
             </div>
             <div className="duo">
               <div className="campo">
-                <label htmlFor="numero">Número</label>
-                <input id="numero" name="numero" required maxLength={15} />
+                <label htmlFor="bairro">Bairro</label>
+                <input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} required maxLength={60} />
               </div>
               <div className="campo">
                 <label htmlFor="complemento">Complemento</label>
                 <input id="complemento" name="complemento" maxLength={60} />
               </div>
             </div>
-            <small style={{ color: "var(--osso-2)" }}>Não encontrou seu bairro? Fale com a gente pelo WhatsApp.</small>
           </div>
         )}
       </section>
@@ -227,7 +250,7 @@ export function Checkout({ produtos, zonas, retiradaAtiva, enderecoRetirada }: {
           {erro}
         </p>
       )}
-      <button className="btn-ouro centro" type="submit" disabled={pendente}>
+      <button className="btn-ouro centro" type="submit" disabled={pendente || calculando || !podeEnviar}>
         {pendente ? "Enviando…" : "Fazer pedido"}
       </button>
     </form>

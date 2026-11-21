@@ -1,4 +1,5 @@
 import { formatarKg, formatarReais, formatarValor } from "../dinheiro";
+import { formatarDistancia } from "../entrega/frete";
 import type { ItemCalculado } from "./calculo";
 
 export type PedidoParaMensagem = {
@@ -10,7 +11,10 @@ export type PedidoParaMensagem = {
   numero?: string | null;
   complemento?: string | null;
   bairro?: string | null;
+  cidade?: string | null;
   cep?: string | null;
+  distanciaMetros?: number | null;
+  freteACombinar?: boolean;
   itens: ItemCalculado[];
   subtotalCentavos: number;
   freteCentavos: number;
@@ -36,13 +40,18 @@ export function mensagemPedido(p: PedidoParaMensagem): string {
     "",
     `Subtotal${p.temItemPesado ? " estimado" : ""}: ${formatarReais(p.subtotalCentavos)}${p.subtotalIncompleto ? " + peças a pesar" : ""}`,
   ];
-  if (p.modo === "ENTREGA") linhas.push(`Frete (${p.bairro}): ${formatarReais(p.freteCentavos)}`);
+  if (p.modo === "ENTREGA")
+    linhas.push(
+      p.freteACombinar
+        ? "Frete: a confirmar (CEP não localizado automaticamente)"
+        : `Frete${p.distanciaMetros ? ` (${formatarDistancia(p.distanciaMetros)})` : ""}: ${formatarReais(p.freteCentavos)}`,
+    );
   linhas.push(`*Total${p.temItemPesado ? " estimado" : ""}: ${formatarReais(p.totalCentavos)}${p.subtotalIncompleto ? " + peças a pesar" : ""}*`);
   if (p.temItemPesado) linhas.push("_Peças inteiras são pesadas na separação; o valor final é enviado para confirmação._");
   linhas.push("", `Cliente: ${p.clienteNome}`, `Celular: ${p.clienteCelular}`);
   if (p.modo === "ENTREGA") {
     const comp = p.complemento ? `, ${p.complemento}` : "";
-    linhas.push(`Entrega: ${p.endereco}, ${p.numero}${comp} — ${p.bairro}${p.cep ? ` · CEP ${p.cep}` : ""}`);
+    linhas.push(`Entrega: ${p.endereco}, ${p.numero}${comp} — ${p.bairro}${p.cidade ? `, ${p.cidade}` : ""}${p.cep ? ` · CEP ${p.cep}` : ""}`);
   } else linhas.push("Retirada na loja");
   if (p.observacao) linhas.push(`Obs.: ${p.observacao}`);
   return linhas.join("\n");

@@ -4,7 +4,7 @@ import { db, schema } from "@/db";
 import { CONFIG_PADRAO } from "@/modules/loja/horario";
 import type { ConfigLoja } from "@/db/schema";
 
-const { produtos, categorias, configuracoes, zonasEntrega } = schema;
+const { produtos, categorias, configuracoes } = schema;
 
 export type ProdutoVitrine = typeof produtos.$inferSelect & { categoriaNome: string; categoriaSlug: string };
 
@@ -37,10 +37,6 @@ export async function produtoPublico(slug: string): Promise<ProdutoVitrine | nul
 export async function configLoja(): Promise<ConfigLoja> {
   const d = await db();
   const [c] = await d.select().from(configuracoes).where(eq(configuracoes.id, 1));
-  return { ...CONFIG_PADRAO, ...(c?.dados ?? {}) };
-}
-
-export async function zonasAtivas() {
-  const d = await db();
-  return d.select().from(zonasEntrega).where(eq(zonasEntrega.ativo, true)).orderBy(asc(zonasEntrega.bairro));
+  const dados = (c?.dados ?? {}) as Partial<ConfigLoja>;
+  return { ...CONFIG_PADRAO, ...dados, entrega: { ...CONFIG_PADRAO.entrega, ...(dados.entrega ?? {}) } };
 }

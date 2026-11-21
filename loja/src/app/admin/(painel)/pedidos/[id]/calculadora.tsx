@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatarKg, formatarReais, formatarValor, kgParaGramas, valorPorPeso } from "@/modules/dinheiro";
+import { formatarKg, formatarReais, formatarValor, kgParaGramas, reaisParaCentavos, valorPorPeso } from "@/modules/dinheiro";
 
 type Item = { id: number; nome: string; tipoVenda: "PECA" | "PACOTE"; precoCentavos: number; quantidade: number };
 
@@ -9,9 +9,11 @@ type Item = { id: number; nome: string; tipoVenda: "PECA" | "PACOTE"; precoCenta
  * Calculadora de pesagem (PES-001, versão manual do MVP): o operador digita o peso real de cada peça,
  * o sistema calcula o valor final e monta a mensagem para o cliente confirmar no WhatsApp.
  */
-export function CalculadoraPesagem({ codigo, celularCliente, freteCentavos, itens }: { codigo: string; celularCliente: string; freteCentavos: number; itens: Item[] }) {
+export function CalculadoraPesagem({ codigo, celularCliente, freteCentavos, freteACombinar, itens }: { codigo: string; celularCliente: string; freteCentavos: number; freteACombinar: boolean; itens: Item[] }) {
   const pecas = itens.flatMap((i) => (i.tipoVenda === "PECA" ? Array.from({ length: i.quantidade }, (_, n) => ({ chave: `${i.id}-${n}`, item: i, n })) : []));
   const [pesos, setPesos] = useState<Record<string, string>>({});
+  const [freteTxt, setFreteTxt] = useState("");
+  const frete = freteACombinar ? (reaisParaCentavos(freteTxt) ?? 0) : freteCentavos;
 
   const linhas: string[] = [];
   let total = 0;
@@ -31,8 +33,9 @@ export function CalculadoraPesagem({ codigo, celularCliente, freteCentavos, iten
     total += v;
     linhas.push(`• ${i.quantidade}x ${i.nome}: ${formatarReais(v)}`);
   }
-  if (freteCentavos) linhas.push(`• Frete: ${formatarReais(freteCentavos)}`);
-  const final = total + freteCentavos;
+  if (frete) linhas.push(`• Frete: ${formatarReais(frete)}`);
+  if (freteACombinar && reaisParaCentavos(freteTxt) === null) completo = false;
+  const final = total + frete;
   const msg = [`*Pedido ${codigo} pesado* — Prime Grill Paiva`, "", ...linhas, "", `*Total final: ${formatarReais(final)}*`, "", "Podemos confirmar?"].join("\n");
 
   return (
@@ -56,6 +59,14 @@ export function CalculadoraPesagem({ codigo, celularCliente, freteCentavos, iten
           );
         })}
       </div>
+      {freteACombinar && (
+        <div className="form" style={{ paddingTop: 0 }}>
+          <div className="f">
+            <label htmlFor="frete-combinar">Frete a cobrar (R$) — CEP não localizado automaticamente</label>
+            <input id="frete-combinar" inputMode="decimal" placeholder="Ex.: 10,00" value={freteTxt} onChange={(e) => setFreteTxt(e.target.value)} />
+          </div>
+        </div>
+      )}
       <div className="acoes" style={{ justifyContent: "space-between", alignItems: "center" }}>
         <span className="num" style={{ fontWeight: 700, fontSize: 16 }}>
           Total final: {completo ? formatarReais(final) : "—"}

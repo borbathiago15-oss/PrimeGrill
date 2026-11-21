@@ -71,7 +71,7 @@ button { cursor: pointer; background: none; border: none; }
 .caixa { padding: 14px; border-radius: 14px; background: var(--carvao-2); border: 1px solid var(--borda-esc-2); display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
 .caixa .r { display: flex; justify-content: space-between; gap: 12px; color: var(--osso-2); }
 .caixa .r b { color: var(--osso); font-weight: 600; }
-.aviso { display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: rgba(212,169,78,.08); border: 1px solid rgba(212,169,78,.3); font-size: 13px; line-height: 1.5; color: #E6DCC8; }
+.aviso { display: block; padding: 12px 14px; border-radius: 12px; background: rgba(212,169,78,.08); border: 1px solid rgba(212,169,78,.3); font-size: 13px; line-height: 1.5; color: #E6DCC8; }
 .add-bar { position: sticky; bottom: 0; margin-top: 18px; padding: 14px 16px 18px; background: var(--carvao); border-top: 1px solid #241F1B; display: flex; gap: 12px; align-items: center; }
 .qtd { display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 6px; border: 1px solid var(--borda-esc); border-radius: 14px; }
 .qtd button { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 20px; color: var(--dourado); background: var(--carvao-3); }
@@ -178,3 +178,15 @@ tr.link:hover td { background: #FCF8F0; }
 .det { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
 .kv { grid-template-columns: minmax(96px, max-content) 1fr; }
 @media (max-width: 1100px) { .det { grid-template-columns: 1fr; } }
+
+/* acompanhamento do pedido */
+.etapas { list-style: none; padding: 6px 16px 16px; display: flex; flex-direction: column; }
+.etapas li { position: relative; padding: 0 0 16px 30px; color: #776A60; font-size: 14px; }
+.etapas li::before { content: ""; position: absolute; left: 0; top: 1px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #3A332D; background: var(--carvao); }
+.etapas li::after { content: ""; position: absolute; left: 8px; top: 20px; bottom: 2px; width: 2px; background: #2E2925; }
+.etapas li:last-child::after { display: none; }
+.etapas li.feita, .etapas li.atual { color: var(--osso); font-weight: 600; }
+.etapas li.feita::before { background: var(--dourado); border-color: var(--dourado); }
+.etapas li.feita::after { background: var(--dourado-esc); }
+.etapas li.atual::before { border-color: var(--dourado); box-shadow: 0 0 0 4px rgba(212,169,78,.18); }
+.etapas small { display: block; font-weight: 400; color: var(--osso-2); font-size: 12px; margin-top: 2px; }
