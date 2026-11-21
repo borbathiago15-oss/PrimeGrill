@@ -72,7 +72,21 @@ export type ConfigLoja = {
   retiradaAtiva: boolean;
   enderecoRetirada: string;
   entrega: ConfigEntrega;
+  pagamento?: ConfigPagamento;
 };
+
+export type ConfigPagamento = {
+  pixChave: string;
+  pixNome: string;
+  pixCidade: string;
+  aceitaPix: boolean;
+  aceitaCartaoLink: boolean;
+  aceitaNaEntrega: boolean;
+};
+
+export const FORMAS_PAGAMENTO = ["PIX", "CARTAO_LINK", "NA_ENTREGA"] as const;
+export type FormaPagamento = (typeof FORMAS_PAGAMENTO)[number];
+export type PagamentoStatus = "PENDENTE" | "INFORMADO" | "PAGO";
 
 export const pedidos = pgTable(
   "pedidos",
@@ -97,6 +111,12 @@ export const pedidos = pgTable(
     /** A pesagem/separação já deu baixa no estoque (evita baixa dupla; estorno no cancelamento). */
     baixaEstoque: boolean("baixa_estoque").notNull().default(false),
     totalFinalCentavos: integer("total_final_centavos"),
+    /** Forma escolhida pelo cliente no link do pedido (ou pelo atendente, PG-P-001). */
+    formaPagamento: text("forma_pagamento").$type<FormaPagamento>(),
+    /** PENDENTE → INFORMADO (cliente diz que pagou) → PAGO (loja conferiu). */
+    pagamentoStatus: text("pagamento_status").$type<PagamentoStatus>().notNull().default("PENDENTE"),
+    linkCartao: text("link_cartao"),
+    pagoEm: timestamp("pago_em", { withTimezone: true }),
     cidade: text("cidade"),
     subtotalEstimadoCentavos: integer("subtotal_estimado_centavos").notNull(),
     totalEstimadoCentavos: integer("total_estimado_centavos").notNull(),

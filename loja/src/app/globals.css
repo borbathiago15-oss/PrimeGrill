@@ -197,3 +197,42 @@ tr.link:hover td { background: #FCF8F0; }
 .kpi { padding: 16px 18px; }
 .kpi b { display: block; font-size: 24px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
 .kpi small { color: var(--texto-2); font-size: 12.5px; }
+
+/* ---------- Fluxo guiado do pedido (painel) ---------- */
+.passo-atual { border: 2px solid var(--dourado); }
+.trilha { list-style: none; display: flex; gap: 4px; padding: 12px 18px; border-bottom: 1px solid var(--borda); overflow-x: auto; background: var(--papel-2); }
+.trilha li { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--texto-2); white-space: nowrap; padding-right: 10px; }
+.trilha li span { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--branco); border: 1px solid var(--borda); }
+.trilha li.feita { color: var(--ok); } .trilha li.feita span { background: var(--ok); border-color: var(--ok); color: #fff; }
+.trilha li.atual { color: var(--texto); font-weight: 700; } .trilha li.atual span { background: var(--dourado); border-color: var(--dourado); color: var(--carvao); }
+.passo-corpo { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
+.passo-corpo h2 { font-family: var(--f-display); font-size: 21px; }
+.passo-corpo p { font-size: 14px; line-height: 1.5; color: var(--texto); }
+.linha-botoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn-grande { height: 48px; padding: 0 22px; font-size: 15px; }
+.manual summary, .manual-status summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--texto-2); }
+.manual[open] summary { margin-bottom: 10px; }
+.manual-status { padding: 14px 18px; }
+.manual-status[open] summary { margin-bottom: 6px; }
+.manual-status .form { padding-left: 0; padding-right: 0; }
+.manual-status .acoes { padding-left: 0; padding-right: 0; }
+.link-cliente { font-size: 12.5px !important; color: var(--texto-2) !important; word-break: break-all; }
+.link-cliente a { color: var(--info); font-weight: 600; }
+.dica { font-size: 12.5px !important; color: var(--atencao) !important; }
+.alerta-novos { display: block; padding: 14px 18px; border-radius: 6px; background: #F5ECD8; border: 1px solid var(--dourado); color: var(--texto); font-size: 15px; }
+.alerta-novos b { color: var(--dourado-txt); }
+
+/* ---------- Link do pedido (cliente) ---------- */
+.formas { display: flex; flex-direction: column; gap: 10px; padding: 8px 16px 14px; }
+.forma { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px; border: 1px solid var(--borda-esc); cursor: pointer; }
+.forma.on { border-color: var(--dourado); background: rgba(212,169,78,.08); }
+.forma input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--dourado); flex: none; }
+.forma b { display: block; color: var(--osso); font-size: 15px; }
+.forma small { display: block; color: #A99E90; font-size: 13px; margin-top: 2px; }
+.linha-valor { display: flex; justify-content: space-between; gap: 12px; }
+.pagar { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: #D7CEC0; line-height: 1.5; }
+.qr { align-self: center; background: #fff; padding: 10px; border-radius: 12px; width: 220px; height: 220px; }
+.pix-codigo { width: 100%; resize: none; font-family: ui-monospace, monospace; font-size: 12px; padding: 10px; border-radius: 10px; background: var(--carvao); color: var(--osso-2); border: 1px solid var(--borda-esc); word-break: break-all; }
+.ok-box { padding: 12px 14px; border-radius: 12px; background: rgba(111,191,142,.12); border: 1px solid rgba(111,191,142,.4); color: var(--ok-esc); font-size: 14px; }
+.pagar .btn-ouro, .pagar .btn-linha, .pix-codigo { flex: none; }
+.linha-valor .num { white-space: nowrap; }

@@ -139,6 +139,7 @@ export async function salvarConfig(_: EstadoForm, form: FormData): Promise<Estad
     retiradaAtiva: form.get("retiradaAtiva") === "on",
     enderecoRetirada: String(form.get("enderecoRetirada") ?? "").trim().slice(0, 120),
     entrega: atual.entrega,
+    pagamento: atual.pagamento,
   };
   const banco = await db();
   await banco
@@ -202,4 +203,24 @@ export async function salvarEntrega(_: EstadoForm, form: FormData): Promise<Esta
     .onConflictDoUpdate({ target: configuracoes.id, set: { dados, atualizadoEm: new Date() } });
   revalidatePath("/", "layout");
   return { ok: ativa ? "Entrega salva e ativa." : "Entrega salva (desativada para os clientes)." };
+}
+
+/** Chave Pix e formas de pagamento aceitas no link do pedido. */
+export async function salvarPagamento(_: EstadoForm, form: FormData): Promise<EstadoForm> {
+  await exigirAdmin();
+  const atual = await configLoja();
+  const pixChave = String(form.get("pixChave") ?? "").trim().slice(0, 77);
+  const pixNome = String(form.get("pixNome") ?? "").trim().slice(0, 60);
+  const pixCidade = String(form.get("pixCidade") ?? "").trim().slice(0, 40);
+  const aceitaPix = form.get("aceitaPix") === "on";
+  const aceitaCartaoLink = form.get("aceitaCartaoLink") === "on";
+  const aceitaNaEntrega = form.get("aceitaNaEntrega") === "on";
+  if (aceitaPix && !pixChave) return { erro: "Para aceitar Pix, informe a chave Pix da loja." };
+  if (aceitaPix && (!pixNome || !pixCidade)) return { erro: "Informe o nome do recebedor e a cidade (aparecem no Pix)." };
+  if (!aceitaPix && !aceitaCartaoLink && !aceitaNaEntrega) return { erro: "Deixe pelo menos uma forma de pagamento ativa." };
+  const dados: ConfigLoja = { ...atual, pagamento: { pixChave, pixNome, pixCidade, aceitaPix, aceitaCartaoLink, aceitaNaEntrega } };
+  const banco = await db();
+  await banco.insert(configuracoes).values({ id: 1, dados }).onConflictDoUpdate({ target: configuracoes.id, set: { dados, atualizadoEm: new Date() } });
+  revalidatePath("/admin/configuracoes");
+  return { ok: "Pagamento salvo." };
 }

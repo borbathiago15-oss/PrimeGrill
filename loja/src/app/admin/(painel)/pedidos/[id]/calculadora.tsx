@@ -14,6 +14,8 @@ type Pesagem = { itemId: number; peca: number; gramas: number; valorCentavos: nu
 export function CalculadoraPesagem(props: {
   pedidoId: number;
   codigo: string;
+  linkCliente: string;
+  podeEnviar: boolean;
   celularCliente: string;
   freteCentavos: number;
   freteACombinar: boolean;
@@ -21,7 +23,7 @@ export function CalculadoraPesagem(props: {
   baixaFeita: boolean;
   pesagens: Pesagem[];
 }) {
-  const { pedidoId, codigo, celularCliente, freteCentavos, freteACombinar, itens, baixaFeita } = props;
+  const { pedidoId, codigo, linkCliente, podeEnviar, celularCliente, freteCentavos, freteACombinar, itens, baixaFeita } = props;
   const [estado, acao, enviando] = useActionState<EstadoSeparacao, FormData>(confirmarSeparacao, {});
   const pecas = itens.flatMap((i) => (i.tipoVenda === "PECA" ? Array.from({ length: i.quantidade }, (_, n) => ({ chave: `${i.id}-${n}`, item: i, n })) : []));
   const registrados = new Map(props.pesagens.map((p) => [`${p.itemId}-${p.peca - 1}`, p.gramas]));
@@ -52,7 +54,7 @@ export function CalculadoraPesagem(props: {
   if (frete) linhas.push(`• Frete: ${formatarReais(frete)}`);
   if (freteACombinar && !baixaFeita && reaisParaCentavos(freteTxt) === null) completo = false;
   const final = total + frete;
-  const msg = [`*Pedido ${codigo} ${pecas.length ? "pesado" : "separado"}* — Prime Grill Paiva`, "", ...linhas, "", `*Total final: ${formatarReais(final)}*`, "", "Podemos confirmar?"].join("\n");
+  const msg = [`*Pedido ${codigo} ${pecas.length ? "pesado" : "separado"}* — Prime Grill Paiva`, "", ...linhas, "", `*Total final: ${formatarReais(final)}*`, "", "Confirme e escolha como pagar (Pix, cartão ou na entrega/retirada) neste link:", linkCliente].join("\n");
   const pronto = baixaFeita || estado.ok;
 
   return (
@@ -99,9 +101,9 @@ export function CalculadoraPesagem(props: {
               {enviando ? "Registrando…" : "Confirmar separação e dar baixa"}
             </button>
           )}
-          {pronto && completo && (
+          {pronto && completo && podeEnviar && (
             <a className="btn btn-pri" href={`https://wa.me/${celularCliente}?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
-              Enviar valor final ao cliente ↗
+              Enviar valor final + link ao cliente ↗
             </a>
           )}
         </span>

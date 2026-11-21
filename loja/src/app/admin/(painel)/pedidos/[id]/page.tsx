@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { mudarStatus } from "../../acoes";
 import { CalculadoraPesagem } from "./calculadora";
+import { ProximoPasso } from "./proximo-passo";
+import { AtualizarSozinho } from "@/components/copiar";
+import { linkDoPedido, pixDoPedido } from "@/lib/pagamento";
 import { ROTULO_STATUS, pedidoCompleto } from "@/lib/pedidos";
 import { db, schema } from "@/db";
 import { eq } from "drizzle-orm";
@@ -23,6 +26,8 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
   const celular = "55" + p.clienteCelular.replace(/\D/g, "");
   const destino = [p.endereco && `${p.endereco}, ${p.numero}`, p.bairro, p.cidade, p.cep].filter(Boolean).join(", ");
   const origem = config.entrega.lat !== null ? `${config.entrega.lat},${config.entrega.lng}` : config.entrega.endereco;
+  const link = await linkDoPedido(p.codigo);
+  const pix = p.totalFinalCentavos !== null && p.formaPagamento === "PIX" ? await pixDoPedido(config.pagamento, p.totalFinalCentavos, p.codigo) : null;
   const rota = p.modo === "ENTREGA" ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}` : null;
 
   return (
@@ -38,7 +43,11 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
           ‹ Pedidos
         </Link>
       </div>
-      <div className="cont det">
+      <AtualizarSozinho />
+      <div className="cont">
+        <ProximoPasso p={p} celular={celular} link={link} pix={pix?.codigoPix ?? null} pagamento={config.pagamento} />
+      </div>
+      <div className="cont det" style={{ paddingTop: 0 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="cartao">
             <div className="cartao-h">
@@ -89,8 +98,10 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               </dd>
             </dl>
           </div>
-          {p.status !== "CANCELADO" && (
+          {p.status !== "CANCELADO" && p.status !== "NOVO" && (
             <CalculadoraPesagem
+              linkCliente={link}
+              podeEnviar={p.status === "EM_SEPARACAO" || p.status === "AGUARDANDO_CLIENTE"}
               pedidoId={p.id}
               baixaFeita={p.baixaEstoque}
               pesagens={pesagens.map((x) => ({ itemId: x.itemId, peca: x.peca, gramas: x.gramas, valorCentavos: x.valorCentavos }))}
@@ -139,10 +150,9 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               <dd>{p.optinWhatsapp ? "Aceitou" : "Não aceitou"}</dd>
             </dl>
           </div>
-          <form action={mudarStatus} className="cartao">
-            <div className="cartao-h">
-              <h2>Atualizar status</h2>
-            </div>
+          <details className="cartao manual-status">
+          <summary>Ajuste manual de status / cancelar pedido</summary>
+          <form action={mudarStatus}>
             <div className="form" style={{ gridTemplateColumns: "1fr" }}>
               <input type="hidden" name="id" value={p.id} />
               <div className="f">
@@ -161,9 +171,10 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               </div>
             </div>
             <div className="acoes">
-              <button className="btn btn-pri">Salvar status</button>
+              <button className="btn">Salvar status</button>
             </div>
           </form>
+          </details>
           <div className="cartao">
             <div className="cartao-h">
               <h2>Histórico</h2>

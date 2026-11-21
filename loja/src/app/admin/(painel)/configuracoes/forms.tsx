@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { salvarConfig, salvarEntrega, type EstadoForm } from "../acoes";
+import { salvarConfig, salvarEntrega, salvarPagamento, type EstadoForm } from "../acoes";
 import { formatarValor } from "@/modules/dinheiro";
 import type { ConfigEntrega } from "@/modules/entrega/frete";
-import type { ConfigLoja } from "@/db/schema";
+import type { ConfigLoja, ConfigPagamento } from "@/db/schema";
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -156,6 +156,52 @@ export function FormEntrega({ entrega }: { entrega: ConfigEntrega }) {
       <div className="acoes">
         <button className="btn btn-pri" disabled={pendente}>
           {pendente ? "Salvando…" : "Salvar entrega"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export function FormPagamento({ pagamento }: { pagamento: ConfigPagamento }) {
+  const [estado, acao, pendente] = useActionState<EstadoForm, FormData>(salvarPagamento, {});
+  return (
+    <form action={acao} className="cartao">
+      <div className="cartao-h">
+        <h2>Pagamento</h2>
+        {pagamento.pixChave ? <span className="chip ok">Pix configurado</span> : <span className="chip at">Sem chave Pix</span>}
+      </div>
+      {estado.erro && <p className="msg-erro" style={{ margin: "14px 18px 0" }}>{estado.erro}</p>}
+      {estado.ok && <p className="msg-ok" style={{ margin: "14px 18px 0" }}>{estado.ok}</p>}
+      <div className="form">
+        <div className="f cheio">
+          <label htmlFor="pixChave">Chave Pix da loja</label>
+          <input id="pixChave" name="pixChave" defaultValue={pagamento.pixChave} placeholder="CNPJ, e-mail, celular (+55...) ou chave aleatória" maxLength={77} autoComplete="off" />
+          <small>O cliente recebe, no link do pedido, o QR Code e o Pix copia e cola já com o valor final e o código do pedido.</small>
+        </div>
+        <div className="f">
+          <label htmlFor="pixNome">Nome do recebedor (como no banco)</label>
+          <input id="pixNome" name="pixNome" defaultValue={pagamento.pixNome} maxLength={60} />
+        </div>
+        <div className="f">
+          <label htmlFor="pixCidade">Cidade do recebedor</label>
+          <input id="pixCidade" name="pixCidade" defaultValue={pagamento.pixCidade} maxLength={40} />
+        </div>
+        <div className="f cheio" style={{ gap: 10 }}>
+          <label>Formas aceitas no link do pedido</label>
+          <label className="f-check">
+            <input type="checkbox" name="aceitaPix" defaultChecked={pagamento.aceitaPix} /> Pix
+          </label>
+          <label className="f-check">
+            <input type="checkbox" name="aceitaCartaoLink" defaultChecked={pagamento.aceitaCartaoLink} /> Cartão de crédito por link (o atendente cola o link da maquininha/banco)
+          </label>
+          <label className="f-check">
+            <input type="checkbox" name="aceitaNaEntrega" defaultChecked={pagamento.aceitaNaEntrega} /> Na entrega / retirada
+          </label>
+        </div>
+      </div>
+      <div className="acoes">
+        <button className="btn btn-pri" disabled={pendente}>
+          {pendente ? "Salvando…" : "Salvar pagamento"}
         </button>
       </div>
     </form>

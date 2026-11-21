@@ -74,3 +74,13 @@ Limitações conhecidas: a distância é estimada (linha reta × fator), não a 
 ## 9. Pendências
 
 C9 (validade da reserva), C11 (pagamento), decisão sobre cadastro opcional de cliente e sobre observações de corte/porcionamento.
+
+## 8.2 Fluxo do pedido com link do cliente (pagamento até a entrega)
+
+1. **Novo** — o pedido chega na fila do painel (alerta "pedido novo", lista atualiza sozinha). O atendente abre e clica **Aceitar**.
+2. **Em separação** — o atendente pesa cada peça; o sistema calcula o valor final e dá baixa no estoque.
+3. **Aguardando cliente** — o atendente envia pelo WhatsApp o valor final **com o link do pedido** (`/pedido/<código>`). No link o cliente vê o peso real de cada peça e escolhe: Pix, cartão de crédito por link, ou na entrega/retirada.
+4. **Confirmado · pagamento** — Pix: o link mostra QR Code e Pix copia-e-cola (BR Code estático) já com o valor e o código do pedido. Cartão: o atendente cola no painel o link gerado na maquininha/banco, que aparece para o cliente. O cliente pode tocar "Já paguei"; a loja confere e clica **Confirmar que o pagamento caiu**.
+5. **Concluído** — entregue/retirado. Pagamento na entrega é registrado como recebido neste passo.
+
+Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o atendente registra a forma de pagamento no painel. Chave Pix, nome, cidade e formas aceitas ficam em "Loja e entregas". Sem provedor de pagamento integrado (C11 continua em aberto): a conferência do Pix/cartão é feita pela loja.

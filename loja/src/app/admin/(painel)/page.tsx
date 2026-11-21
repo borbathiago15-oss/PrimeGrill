@@ -4,6 +4,8 @@ import { db, schema } from "@/db";
 import { ROTULO_STATUS } from "@/lib/pedidos";
 import { formatarReais } from "@/modules/dinheiro";
 import { STATUS_PEDIDO } from "@/db/schema";
+import { AtualizarSozinho } from "@/components/copiar";
+import { ROTULO_PAGAMENTO } from "@/lib/pagamento";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +22,20 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
     .where(filtro ? eq(pedidos.status, filtro) : undefined)
     .orderBy(desc(pedidos.criadoEm))
     .limit(100);
+  const novos = (await banco.select({ id: pedidos.id }).from(pedidos).where(eq(pedidos.status, "NOVO"))).length;
   return (
     <>
       <div className="topo">
         <h1>Pedidos</h1>
-        <span className="rotulo">Loja online</span>
+        <span className="rotulo">Loja online · atualiza sozinho</span>
       </div>
+      <AtualizarSozinho />
       <div className="cont">
+        {novos > 0 && (
+          <Link href="/admin?status=NOVO" className="alerta-novos">
+            <b>{novos === 1 ? "1 pedido novo" : `${novos} pedidos novos`}</b> esperando a loja aceitar →
+          </Link>
+        )}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Link href="/admin" className={`chip ${!filtro ? "ouro" : "ne"}`}>
             Todos
@@ -47,9 +56,10 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                   <th>Pedido</th>
                   <th>Cliente</th>
                   <th>Recebimento</th>
-                  <th className="n">Total estimado</th>
+                  <th className="n">Total</th>
                   <th>Status</th>
                   <th>Feito em</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -67,23 +77,40 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                     </td>
                     <td>{p.modo === "ENTREGA" ? `Entrega · ${p.bairro}` : "Retirada"}</td>
                     <td className="n">
-                      {formatarReais(p.totalEstimadoCentavos)}
-                      {p.temItemPesado ? " *" : ""}
+                      {p.totalFinalCentavos !== null ? (
+                        <b>{formatarReais(p.totalFinalCentavos)}</b>
+                      ) : (
+                        <>
+                          {formatarReais(p.totalEstimadoCentavos)}
+                          {p.temItemPesado ? " *" : ""}
+                        </>
+                      )}
                     </td>
                     <td>
                       <span className={`chip ${ROTULO_STATUS[p.status].cls}`}>
                         <i />
                         {ROTULO_STATUS[p.status].texto}
                       </span>
+                      {(p.status === "CONFIRMADO" || p.pagamentoStatus === "PAGO") && (
+                        <>
+                          <br />
+                          <small style={{ color: "var(--texto-2)" }}>{ROTULO_PAGAMENTO[p.pagamentoStatus].texto}</small>
+                        </>
+                      )}
                     </td>
                     <td className="num">{hora.format(p.criadoEm)}</td>
+                    <td>
+                      <Link href={`/admin/pedidos/${p.id}`} className={`btn btn-pq ${p.status === "NOVO" ? "btn-pri" : ""}`}>
+                        {p.status === "NOVO" ? "Abrir e aceitar" : "Abrir"}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </div>
-        <small style={{ color: "var(--texto-2)" }}>* contém peça inteira: valor final após pesagem.</small>
+        <small style={{ color: "var(--texto-2)" }}>* contém peça inteira: valor final após pesagem. Valor em negrito = total final já pesado.</small>
       </div>
     </>
   );

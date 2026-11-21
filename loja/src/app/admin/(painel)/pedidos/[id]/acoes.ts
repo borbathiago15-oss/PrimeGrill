@@ -83,3 +83,77 @@ export async function confirmarSeparacao(_: EstadoSeparacao, form: FormData): Pr
   revalidatePath("/", "layout");
   return { ok: "Separação registrada e estoque baixado. Envie o valor final ao cliente." };
 }
+
+/* ---------------- Fluxo guiado do pedido ---------------- */
+
+type Status = (typeof pedidos.$inferSelect)["status"];
+
+async function registrar(pedidoId: number, set: Partial<typeof pedidos.$inferInsert>, status: Status, nota: string, autor: string, de: Status[]) {
+  const banco = await db();
+  const ok = await banco.transaction(async (tx) => {
+    const r = await tx
+      .update(pedidos)
+      .set({ ...set, atualizadoEm: new Date() })
+      .where(and(eq(pedidos.id, pedidoId), inArray(pedidos.status, de)))
+      .returning({ id: pedidos.id });
+    if (!r[0]) return false;
+    await tx.insert(pedidoEventos).values({ pedidoId, status, nota, autor });
+    return true;
+  });
+  revalidatePath(`/admin/pedidos/${pedidoId}`);
+  revalidatePath("/admin");
+  return ok;
+}
+
+/** Passo 1: atendente aceita o pedido e começa a separar. */
+export async function aceitarPedido(form: FormData) {
+  const autor = await exigirAdmin();
+  await registrar(Number(form.get("pedidoId")), { status: "EM_SEPARACAO" }, "EM_SEPARACAO", "Pedido aceito; separação iniciada", autor, ["NOVO"]);
+}
+
+/** Alternativa manual (PG-P-001): o cliente respondeu pelo WhatsApp e o atendente registra a forma de pagamento. */
+export async function registrarFormaPeloAtendente(form: FormData) {
+  const autor = await exigirAdmin();
+  const forma = String(form.get("forma"));
+  if (forma !== "PIX" && forma !== "CARTAO_LINK" && forma !== "NA_ENTREGA") return;
+  await registrar(Number(form.get("pedidoId")), { status: "CONFIRMADO", formaPagamento: forma }, "CONFIRMADO", "Cliente confirmou pelo WhatsApp · forma registrada pelo atendente", autor, ["AGUARDANDO_CLIENTE", "CONFIRMADO"]);
+}
+
+/** Atendente cola o link de pagamento do cartão gerado na maquininha/banco. */
+export async function salvarLinkCartao(_: EstadoSeparacao, form: FormData): Promise<EstadoSeparacao> {
+  const autor = await exigirAdmin();
+  const link = String(form.get("link") ?? "").trim();
+  let url: URL;
+  try {
+    url = new URL(link);
+  } catch {
+    return { erro: "Cole o link completo, começando com https://" };
+  }
+  if (url.protocol !== "https:" || link.length > 500) return { erro: "O link do cartão precisa começar com https://" };
+  const ok = await registrar(Number(form.get("pedidoId")), { linkCartao: url.toString(), formaPagamento: "CARTAO_LINK" }, "CONFIRMADO", "Link do cartão anexado ao pedido", autor, ["CONFIRMADO"]);
+  return ok ? { ok: "Link salvo: ele já aparece para o cliente no link do pedido." } : { erro: "O pedido precisa estar confirmado pelo cliente." };
+}
+
+/** Loja conferiu o recebimento (extrato do Pix, maquininha ou dinheiro). */
+export async function marcarPago(form: FormData) {
+  const autor = await exigirAdmin();
+  await registrar(Number(form.get("pedidoId")), { pagamentoStatus: "PAGO", pagoEm: new Date() }, "CONFIRMADO", "Pagamento conferido e recebido", autor, ["CONFIRMADO"]);
+}
+
+/** Último passo: entregue (ou retirado). Pagamento na entrega é dado como recebido aqui. */
+export async function concluirPedido(form: FormData) {
+  const autor = await exigirAdmin();
+  const id = Number(form.get("pedidoId"));
+  const banco = await db();
+  const [p] = await banco.select().from(pedidos).where(eq(pedidos.id, id));
+  if (!p || p.status !== "CONFIRMADO") return;
+  const recebeAgora = p.pagamentoStatus !== "PAGO";
+  await registrar(
+    id,
+    { status: "CONCLUIDO", ...(recebeAgora ? { pagamentoStatus: "PAGO" as const, pagoEm: new Date() } : {}) },
+    "CONCLUIDO",
+    `${p.modo === "ENTREGA" ? "Entregue" : "Retirado"}${recebeAgora ? " · pagamento recebido na entrega" : ""}`,
+    autor,
+    ["CONFIRMADO"],
+  );
+}

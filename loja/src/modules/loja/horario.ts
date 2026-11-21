@@ -1,4 +1,4 @@
-import type { ConfigLoja, HorarioDia } from "@/db/schema";
+import type { ConfigLoja, ConfigPagamento, HorarioDia } from "@/db/schema";
 import { ENTREGA_PADRAO } from "../entrega/frete";
 
 export const FUSO = "America/Recife";
@@ -49,6 +49,15 @@ function proximaAbertura(horarios: HorarioDia[], hoje: number): string | null {
   return null;
 }
 
+export const PAGAMENTO_PADRAO: ConfigPagamento = {
+  pixChave: "",
+  pixNome: "Prime Grill Paiva",
+  pixCidade: "Recife",
+  aceitaPix: true,
+  aceitaCartaoLink: true,
+  aceitaNaEntrega: true,
+};
+
 export const CONFIG_PADRAO: ConfigLoja = {
   horarios: DIAS.map((_, dia) => ({ dia, abre: "09:00", fecha: "18:00", fechado: false })),
   pausada: false,
@@ -57,4 +66,5 @@ export const CONFIG_PADRAO: ConfigLoja = {
   retiradaAtiva: true,
   enderecoRetirada: "",
   entrega: ENTREGA_PADRAO,
+  pagamento: PAGAMENTO_PADRAO,
 };
