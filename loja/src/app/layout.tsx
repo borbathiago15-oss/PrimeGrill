@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import "./fontes.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,17 +9,13 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#0C0B0A", width: "device-width", initialScale: 1 };
 
-const FONTES =
-  "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href={FONTES} />
+        <link rel="preload" href="/fonts/bebas-neue.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/fonts/playfair-display.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
       <body>{children}</body>
     </html>

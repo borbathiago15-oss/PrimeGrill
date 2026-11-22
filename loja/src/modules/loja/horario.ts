@@ -67,4 +67,6 @@ export const CONFIG_PADRAO: ConfigLoja = {
   enderecoRetirada: "",
   entrega: ENTREGA_PADRAO,
   pagamento: PAGAMENTO_PADRAO,
+  whatsapp2: "5581982061289",
+  instagram: "primegrill_paiva",
 };

@@ -18,6 +18,8 @@ export const PERMISSOES = {
   lojaEntregas: ["DONO", "GERENTE"],
   pagamento: ["DONO"],
   usuarios: ["DONO"],
+  /** Studio: folder automático (STU-002). */
+  folder: ["DONO", "GERENTE"],
 } as const satisfies Record<string, readonly Papel[]>;
 
 export type Permissao = keyof typeof PERMISSOES;

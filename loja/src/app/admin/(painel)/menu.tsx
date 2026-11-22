@@ -12,6 +12,7 @@ const ITENS: { href: string; texto: string; exato?: boolean; perm: Permissao }[]
   { href: "/admin/estoque", texto: "Estoque", perm: "estoqueVer" },
   { href: "/admin/notas", texto: "Notas de entrada", perm: "notas" },
   { href: "/admin/configuracoes", texto: "Loja e entregas", perm: "lojaEntregas" },
+  { href: "/admin/folder", texto: "Folder (PDF e imagem)", perm: "folder" },
   { href: "/admin/usuarios", texto: "Usuários", perm: "usuarios" },
 ];
 

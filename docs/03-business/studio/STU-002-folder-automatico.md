@@ -78,3 +78,11 @@ PPTX não faz parte das saídas.
 - **Dado** um produto `PACOTE`, **então** o preço aparece "R$ 89,90 · PACOTE", sem "KG".
 - **Dado** o PDF digital gerado, **então** o botão do WhatsApp abre `wa.me` com o número oficial.
 - **Dada** a alteração do preço de um item após a publicação, **então** o encarte fica Desatualizado.
+
+## 8. Implementação (MVP, 2026-11-21)
+
+- Painel → **Folder (PDF e imagem)** (Dono e Gerente). Formatos: Encarte 1080×1620 (até 36 produtos, página nova a cada 12), Feed 4:5 e Story (até 4).
+- Os arquivos são gerados no navegador: **PDF** (uma página por folha, WhatsApp/contatos/Instagram clicáveis), **JPEG** e **PNG** em 2× (2160 px) e **Compartilhar** direto no celular.
+- Validação (§4.2), grade automática (§4), preço `KG`/`· PACOTE`, aviso de **Desatualizado** com "Regerar" (nova versão, histórico preservado) e validade no rodapé estão implementados.
+- Fontes da marca passaram a ser servidas pelo próprio site (`/fonts`, licença OFL), para o folder exportado sair idêntico à prévia.
+- Pendências: logo branca oficial (hoje a logo preta vai na placa clara, sem inversão por CSS); PDF de impressão A4 com sangria; checklist STU-BR-016; resolução mínima das fotos (R5).

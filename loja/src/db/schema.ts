@@ -73,6 +73,9 @@ export type ConfigLoja = {
   enderecoRetirada: string;
   entrega: ConfigEntrega;
   pagamento?: ConfigPagamento;
+  /** Contatos impressos no folder e no rodapé da loja. */
+  whatsapp2?: string;
+  instagram?: string;
 };
 
 export type ConfigPagamento = {
@@ -313,3 +316,27 @@ export const usuarios = pgTable(
   },
   (t) => [uniqueIndex("usuarios_email_uq").on(t.email)],
 );
+
+/* ---------------- Studio: folder automático (STU-002) ---------------- */
+export type FormatoFolder = "ENCARTE" | "FEED" | "STORY";
+/** Foto do produto no momento da geração: se preço/estoque/foto mudar, o folder fica Desatualizado (STU-002-R2). */
+export type ItemFolder = { id: number; nome: string; tipoVenda: "PECA" | "PACOTE"; precoCentavos: number; fotoUrl: string; pesoNominal: string | null };
+
+export const folders = pgTable("folders", {
+  id: serial("id").primaryKey(),
+  /** Versões do mesmo folder compartilham o grupo (STU-002-R3). */
+  grupo: integer("grupo"),
+  versao: integer("versao").notNull().default(1),
+  formato: text("formato").$type<FormatoFolder>().notNull(),
+  /** Título em 3 palavras; a palavra de índice `destaque` sai em dourado. */
+  titulo: text("titulo").notNull(),
+  destaque: integer("destaque").notNull().default(1),
+  subtitulo: text("subtitulo").notNull(),
+  secao: text("secao").notNull(),
+  frase: text("frase").notNull(),
+  validadeDe: text("validade_de"),
+  validadeAte: text("validade_ate"),
+  itens: jsonb("itens").$type<ItemFolder[]>().notNull(),
+  criadoPor: text("criado_por").notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});
