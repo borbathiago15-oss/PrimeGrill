@@ -5,6 +5,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Prime Grill Paiva — Cortes premium para momentos especiais",
   description: "Carnes premium e produtos para churrasco. Peça online: entrega ou retirada.",
+  applicationName: "Prime Grill Paiva",
+  appleWebApp: { capable: true, title: "Prime Grill", statusBarStyle: "black-translucent" },
+  icons: { icon: "/icones/icone-192.png", apple: "/icones/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#0C0B0A", width: "device-width", initialScale: 1 };

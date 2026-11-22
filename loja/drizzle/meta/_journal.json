@@ -57,6 +57,13 @@
       "when": 1795307550166,
       "tag": "0007_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795308349114,
+      "tag": "0008_chat",
+      "breakpoints": true
     }
   ]
 }

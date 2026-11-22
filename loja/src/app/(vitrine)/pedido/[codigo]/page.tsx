@@ -10,6 +10,9 @@ import { formatarDistancia } from "@/modules/entrega/frete";
 import { formatarKg, formatarReais, formatarValor } from "@/modules/dinheiro";
 import { linhaItem, linkWhatsapp, mensagemPedido } from "@/modules/pedidos/whatsapp";
 import { AlterarPedido, EscolherPagamento, JaPaguei } from "./pagamento-cliente";
+import { ChatPedido } from "@/components/chat";
+import { LembrarPedido } from "@/components/app-instalavel";
+import { enviarChatCliente, lerChatCliente } from "./chat-acoes";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Seu pedido — Prime Grill Paiva", robots: { index: false } };
@@ -49,6 +52,7 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
 
   return (
     <div className="ck">
+      <LembrarPedido codigo={p.codigo} />
       {status !== "CONCLUIDO" && status !== "CANCELADO" && <AtualizarSozinho segundos={25} />}
       <div className="placa" style={{ alignSelf: "flex-start" }}>
         <img src="/marca/logo-preta.png" alt="Prime Grill Paiva" style={{ height: 30 }} />
@@ -222,6 +226,17 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
             </div>
           </div>
         </section>
+      )}
+
+      {status !== "CANCELADO" && (
+        <ChatPedido
+          lado="CLIENTE"
+          tema="escuro"
+          titulo="Dúvidas? Fale com a loja"
+          vazio="Mande sua pergunta aqui (corte, peso, entrega, pagamento). A resposta aparece nesta página."
+          ler={lerChatCliente.bind(null, p.codigo)}
+          enviar={enviarChatCliente.bind(null, p.codigo)}
+        />
       )}
 
       {status === "NOVO" ? (

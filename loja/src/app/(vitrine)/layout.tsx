@@ -1,5 +1,6 @@
 import { BarraCarrinho, CarrinhoProvider, type ResumoProduto } from "@/components/carrinho";
 import { catalogoPublico } from "@/lib/dados";
+import { AppInstalavel } from "@/components/app-instalavel";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function LayoutVitrine({ children }: { children: React.Reac
     <CarrinhoProvider produtos={resumo}>
       <div className="vitrine">
         {children}
+        <AppInstalavel />
         <BarraCarrinho />
       </div>
     </CarrinhoProvider>

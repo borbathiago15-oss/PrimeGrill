@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { mudarStatus } from "../../acoes";
 import { CalculadoraPesagem } from "./calculadora";
 import { ProximoPasso } from "./proximo-passo";
+import { ChatPedido } from "@/components/chat";
+import { enviarChatLoja, lerChatLoja } from "./chat-acoes";
 import { AtualizarSozinho } from "@/components/copiar";
 import { linkDoPedido, pixDoPedido } from "@/lib/pagamento";
 import { usuarioAtual } from "@/lib/admin";
@@ -117,6 +119,16 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div className="cartao">
+            <ChatPedido
+              lado="LOJA"
+              tema="claro"
+              titulo="Chat com o cliente"
+              vazio="Nenhuma mensagem ainda. O cliente escreve pelo link do pedido."
+              ler={lerChatLoja.bind(null, p.id)}
+              enviar={enviarChatLoja.bind(null, p.id)}
+            />
+          </div>
           <div className="cartao">
             <div className="cartao-h">
               <h2>Cliente</h2>

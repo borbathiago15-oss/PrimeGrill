@@ -91,3 +91,10 @@ Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o aten
 - **Baixa do pagamento:** botão *Pagamento recebido — dar baixa* (Pix, cartão por link). Pagamento na entrega é baixado ao concluir.
 - **Pedido do WhatsApp/balcão:** *Pedidos → + Novo pedido*. Mesma regra de preço, frete e estoque da loja online; endereço fora da área não bloqueia (frete digitado ou a combinar). Pode já entrar em separação.
 - **Cliente altera depois de ver o valor:** no link, enquanto aguarda confirmação, o cliente pode tirar peças pesadas ou diminuir pacotes. O que sai volta ao estoque na hora (estorno pelo custo da saída), o total é recalculado e o pedido volta para *Em separação* com o aviso "Cliente alterou o pedido". A loja devolve as peças à câmara e clica *Conferido — enviar novo total*. Erros desfazem tudo (transação). O cancelamento posterior devolve só o saldo líquido que ainda está com o pedido.
+
+## 8.4 Chat do pedido e app no celular
+
+- **Chat do pedido:** no link do pedido o cliente tira dúvidas por escrito; o atendente responde no card "Chat com o cliente" da tela do pedido. A lista de pedidos mostra "💬 Mensagem nova do cliente" até alguém abrir o pedido. Atualiza sozinho a cada 6 s com a tela aberta. Freio: até 15 mensagens do cliente a cada 10 min por pedido; 500 caracteres. Resposta da loja fica registrada com o e-mail de quem respondeu. O código do pedido é a chave de acesso (mesma regra do link).
+- **App instalável (PWA):** a loja pode ser instalada na tela inicial (Android: botão "Instalar"; iPhone: Compartilhar → Adicionar à Tela de Início). Abre em tela cheia, com ícone da marca e atalho "Fazer pedido". Sem internet, mostra a última versão do cardápio ou a página "Sem conexão"; preços e estoque sempre vêm da rede quando há conexão. O painel não passa pelo cache.
+- **Meus pedidos:** o aparelho guarda os últimos 5 pedidos e mostra atalhos no topo do cardápio.
+- Próximo passo possível: notificação no celular (push) quando a loja responder ou o valor final ficar pronto.

@@ -1,3 +1,4 @@
+import { MeusPedidos } from "@/components/app-instalavel";
 import Link from "next/link";
 import { Preco, textoAproximado, textoDisponivel } from "@/components/preco";
 import { catalogoPublico, configLoja } from "@/lib/dados";
@@ -36,6 +37,7 @@ export default async function Cardapio() {
               <span>· {sit.texto}</span>
               <span>· Entrega e retirada</span>
             </div>
+            <MeusPedidos />
           </div>
         </div>
       </header>
@@ -87,8 +89,11 @@ export default async function Cardapio() {
           <span>
             <b>Prime Grill Paiva</b> · Cortes premium para momentos especiais
           </span>
-          <span>WhatsApp {formatarCelular(zap)} · (81) 98206-1289</span>
-          <span>@primegrill_paiva</span>
+          <span>
+            WhatsApp {formatarCelular(zap)}
+            {config.whatsapp2 ? ` · ${formatarCelular(config.whatsapp2.replace(/^55/, ""))}` : ""}
+          </span>
+          {config.instagram && <span>@{config.instagram}</span>}
         </footer>
       </main>
     </>

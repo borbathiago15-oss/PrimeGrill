@@ -6,6 +6,7 @@ import { formatarReais } from "@/modules/dinheiro";
 import { STATUS_PEDIDO } from "@/db/schema";
 import { AtualizarSozinho } from "@/components/copiar";
 import { ROTULO_PAGAMENTO } from "@/lib/pagamento";
+import { pedidosComMensagemNova } from "@/lib/chat";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
     .where(filtro ? eq(pedidos.status, filtro) : undefined)
     .orderBy(desc(pedidos.criadoEm))
     .limit(100);
+  const comMensagem = await pedidosComMensagemNova();
   const novos = (await banco.select({ id: pedidos.id }).from(pedidos).where(eq(pedidos.status, "NOVO"))).length;
   return (
     <>
@@ -37,6 +39,11 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
       <AtualizarSozinho />
       <div className="cont">
         {sp["sem-permissao"] && <p className="msg-erro">Seu papel não tem acesso a essa área. Fale com o dono da loja.</p>}
+        {comMensagem.size > 0 && (
+          <p className="alerta-novos" style={{ background: "#E3ECF4", borderColor: "var(--info)" }}>
+            <b style={{ color: "var(--info)" }}>💬 {comMensagem.size === 1 ? "1 pedido" : `${comMensagem.size} pedidos`} com mensagem nova</b> do cliente — abra o pedido para responder.
+          </p>
+        )}
         {novos > 0 && (
           <Link href="/admin?status=NOVO" className="alerta-novos">
             <b>{novos === 1 ? "1 pedido novo" : `${novos} pedidos novos`}</b> esperando a loja aceitar →
@@ -83,6 +90,12 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                         {p.clienteCelular}
                         {p.origem !== "LOJA_ONLINE" && ` · ${p.origem === "WHATSAPP" ? "WhatsApp" : "Balcão"}`}
                       </small>
+                      {comMensagem.has(p.id) && (
+                        <>
+                          <br />
+                          <small style={{ color: "var(--info)", fontWeight: 700 }}>💬 Mensagem nova do cliente</small>
+                        </>
+                      )}
                       {p.alteracaoCliente && (
                         <>
                           <br />
@@ -115,8 +128,8 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                     </td>
                     <td className="num">{hora.format(p.criadoEm)}</td>
                     <td>
-                      <Link href={`/admin/pedidos/${p.id}`} className={`btn btn-pq ${p.status === "NOVO" ? "btn-pri" : ""}`}>
-                        {p.status === "NOVO" ? "Abrir e aceitar" : "Abrir"}
+                      <Link href={`/admin/pedidos/${p.id}`} className={`btn btn-pq ${p.status === "NOVO" || comMensagem.has(p.id) ? "btn-pri" : ""}`}>
+                        {p.status === "NOVO" ? "Abrir e aceitar" : comMensagem.has(p.id) ? "Responder" : "Abrir"}
                       </Link>
                     </td>
                   </tr>

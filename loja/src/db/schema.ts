@@ -340,3 +340,19 @@ export const folders = pgTable("folders", {
   criadoPor: text("criado_por").notNull(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* ---------------- Chat do pedido ---------------- */
+export const pedidoMensagens = pgTable(
+  "pedido_mensagens",
+  {
+    id: serial("id").primaryKey(),
+    pedidoId: integer("pedido_id").notNull().references(() => pedidos.id, { onDelete: "cascade" }),
+    de: text("de").$type<"CLIENTE" | "LOJA">().notNull(),
+    /** Para mensagens da loja: e-mail de quem respondeu (auditoria). */
+    autor: text("autor"),
+    texto: text("texto").notNull(),
+    lidaPelaLoja: boolean("lida_pela_loja").notNull().default(false),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("pedido_mensagens_pedido_idx").on(t.pedidoId)],
+);

@@ -343,3 +343,42 @@ tr.link:hover td { background: #FCF8F0; }
 .f-encarte .fo-rodape { padding: 22px 50px 24px; }
 .f-encarte .fo-secao { padding: 20px 50px 18px; }
 .f-encarte .fo-topo { height: 380px; } .f-encarte .fo-grade { gap: 18px; } .f-encarte .fo-info { gap: 6px; } .f-encarte .fo-rodape h3 { font-size: 52px; }
+
+/* ---------- Chat do pedido ---------- */
+.chat { display: flex; flex-direction: column; }
+.chat h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; padding: 14px 16px 8px; }
+.chat-msgs { display: flex; flex-direction: column; gap: 8px; padding: 6px 16px 10px; max-height: 340px; overflow-y: auto; }
+.chat-vazio { font-size: 13.5px; line-height: 1.5; opacity: .75; }
+.chat-m { max-width: 82%; padding: 9px 12px; border-radius: 14px; font-size: 14.5px; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+.chat-m small { display: block; margin-top: 4px; font-size: 11px; opacity: .7; }
+.chat-m.minha { align-self: flex-end; border-bottom-right-radius: 4px; }
+.chat-m.outra { align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-form { display: flex; gap: 8px; padding: 8px 16px 14px; align-items: flex-end; }
+.chat-form textarea { flex: 1; resize: none; font: inherit; font-size: 15px; padding: 10px 12px; border-radius: 12px; min-height: 44px; }
+.chat-form button { height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 700; border: none; cursor: pointer; }
+.chat-form button[disabled] { opacity: .5; cursor: not-allowed; }
+.chat-erro { padding: 0 16px 12px; font-size: 13px; color: var(--erro-esc); }
+.chat.escuro { border: 1px solid var(--borda-esc-2); background: var(--carvao-2); border-radius: 16px; color: #D7CEC0; }
+.chat.escuro h2 { color: var(--osso-2); }
+.chat.escuro .chat-m.minha { background: var(--dourado); color: var(--carvao); }
+.chat.escuro .chat-m.outra { background: #26211C; color: var(--osso); }
+.chat.escuro textarea { background: var(--carvao); color: var(--osso); border: 1px solid var(--borda-esc); }
+.chat.escuro button { background: var(--dourado); color: var(--carvao); }
+.chat.claro h2 { color: var(--texto-2); border-bottom: 1px solid var(--borda); padding-bottom: 12px; font-size: 15px; letter-spacing: 0; text-transform: none; color: var(--texto); }
+.chat.claro .chat-msgs { padding-top: 12px; }
+.chat.claro .chat-m.minha { background: var(--texto); color: var(--osso); }
+.chat.claro .chat-m.outra { background: var(--papel-2); color: var(--texto); }
+.chat.claro textarea { border: 1px solid var(--borda); background: var(--branco); }
+.chat.claro button { background: var(--texto); color: var(--osso); }
+.chat.claro .chat-erro { color: var(--erro); }
+
+/* ---------- App instalável ---------- */
+.instalar { position: fixed; left: 12px; right: 12px; bottom: 84px; z-index: 40; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #1C1916; border: 1px solid var(--dourado-esc); box-shadow: 0 12px 30px rgba(0,0,0,.45); color: var(--osso); }
+.instalar img { border-radius: 10px; flex: none; }
+.instalar div { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.instalar small { color: #A99E90; font-size: 12.5px; line-height: 1.35; }
+.instalar button { height: 38px; padding: 0 16px; border-radius: 10px; border: none; background: var(--dourado); color: var(--carvao); font-weight: 800; cursor: pointer; }
+.instalar button.x { background: transparent; color: #A99E90; font-size: 22px; padding: 0 6px; }
+.meus-pedidos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: #CFC6B8; }
+.meus-pedidos a { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--dourado-esc); color: var(--dourado); font-weight: 700; }
+.offline { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center; background: var(--carvao); color: var(--osso); }
