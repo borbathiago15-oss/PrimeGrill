@@ -11,8 +11,9 @@ export const dynamic = "force-dynamic";
 
 const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Recife", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-export default async function Pedidos({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const { status } = await searchParams;
+export default async function Pedidos({ searchParams }: { searchParams: Promise<{ status?: string; "sem-permissao"?: string }> }) {
+  const sp = await searchParams;
+  const { status } = sp;
   const filtro = STATUS_PEDIDO.find((s) => s === status);
   const banco = await db();
   const { pedidos } = schema;
@@ -27,10 +28,15 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
     <>
       <div className="topo">
         <h1>Pedidos</h1>
-        <span className="rotulo">Loja online · atualiza sozinho</span>
+        <span className="rotulo">atualiza sozinho</span>
+        <div className="esp" />
+        <Link href="/admin/pedidos/novo" className="btn btn-pri">
+          + Novo pedido (WhatsApp/balcão)
+        </Link>
       </div>
       <AtualizarSozinho />
       <div className="cont">
+        {sp["sem-permissao"] && <p className="msg-erro">Seu papel não tem acesso a essa área. Fale com o dono da loja.</p>}
         {novos > 0 && (
           <Link href="/admin?status=NOVO" className="alerta-novos">
             <b>{novos === 1 ? "1 pedido novo" : `${novos} pedidos novos`}</b> esperando a loja aceitar →
@@ -73,7 +79,16 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                     <td>
                       {p.clienteNome}
                       <br />
-                      <small style={{ color: "var(--texto-2)" }}>{p.clienteCelular}</small>
+                      <small style={{ color: "var(--texto-2)" }}>
+                        {p.clienteCelular}
+                        {p.origem !== "LOJA_ONLINE" && ` · ${p.origem === "WHATSAPP" ? "WhatsApp" : "Balcão"}`}
+                      </small>
+                      {p.alteracaoCliente && (
+                        <>
+                          <br />
+                          <small style={{ color: "var(--atencao)", fontWeight: 700 }}>Cliente alterou o pedido</small>
+                        </>
+                      )}
                     </td>
                     <td>{p.modo === "ENTREGA" ? `Entrega · ${p.bairro}` : "Retirada"}</td>
                     <td className="n">

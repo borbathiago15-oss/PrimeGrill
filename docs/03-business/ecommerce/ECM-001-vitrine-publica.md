@@ -84,3 +84,10 @@ C9 (validade da reserva), C11 (pagamento), decisão sobre cadastro opcional de c
 5. **Concluído** — entregue/retirado. Pagamento na entrega é registrado como recebido neste passo.
 
 Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o atendente registra a forma de pagamento no painel. Chave Pix, nome, cidade e formas aceitas ficam em "Loja e entregas". Sem provedor de pagamento integrado (C11 continua em aberto): a conferência do Pix/cartão é feita pela loja.
+
+## 8.3 Pix pela maquininha, pedido do WhatsApp e alteração pelo cliente
+
+- **Pix sem chave cadastrada:** o Pix aparece para o cliente mesmo sem chave. Quando ele escolhe Pix, o atendente gera na maquininha/banco um Pix com o valor exato e cola o *copia e cola* no pedido (ou envia a foto do QR). O sistema confere o código (CRC) e **recusa se o valor for diferente do total**. Com chave cadastrada, o Pix automático continua disponível e o da maquininha pode substituí-lo.
+- **Baixa do pagamento:** botão *Pagamento recebido — dar baixa* (Pix, cartão por link). Pagamento na entrega é baixado ao concluir.
+- **Pedido do WhatsApp/balcão:** *Pedidos → + Novo pedido*. Mesma regra de preço, frete e estoque da loja online; endereço fora da área não bloqueia (frete digitado ou a combinar). Pode já entrar em separação.
+- **Cliente altera depois de ver o valor:** no link, enquanto aguarda confirmação, o cliente pode tirar peças pesadas ou diminuir pacotes. O que sai volta ao estoque na hora (estorno pelo custo da saída), o total é recalculado e o pedido volta para *Em separação* com o aviso "Cliente alterou o pedido". A loja devolve as peças à câmara e clica *Conferido — enviar novo total*. Erros desfazem tudo (transação). O cancelamento posterior devolve só o saldo líquido que ainda está com o pedido.

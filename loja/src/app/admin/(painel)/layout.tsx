@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Menu } from "./menu";
-import { exigirAdmin } from "@/lib/admin";
+import { exigirUsuario } from "@/lib/admin";
+import { ROTULO_PAPEL } from "@/modules/usuarios/permissoes";
+import { FormTrocarSenha } from "./usuarios/forms";
 import { COOKIE } from "@/lib/sessao";
 
 export const dynamic = "force-dynamic";
@@ -14,21 +16,33 @@ async function sair() {
 }
 
 export default async function LayoutPainel({ children }: { children: React.ReactNode }) {
-  await exigirAdmin();
+  const eu = await exigirUsuario();
   return (
     <div className="painel">
       <aside className="lateral">
         <div className="placa">
           <img src="/marca/logo-preta.png" alt="Prime Grill Paiva" style={{ height: 40 }} />
         </div>
-        <Menu />
+        <Menu papel={eu.papel} />
+        <a href="/admin/conta" className="quem">
+          <b>{eu.nome}</b>
+          <small>{ROTULO_PAPEL[eu.papel].texto} · minha conta</small>
+        </a>
         <form action={sair} className="sair">
           <button className="btn btn-pq" style={{ background: "transparent", color: "#CFC6B8", borderColor: "#2E2925", width: "100%" }}>
             Sair
           </button>
         </form>
       </aside>
-      <div className="main">{children}</div>
+      <div className="main">
+        {eu.deveTrocarSenha ? (
+          <div className="cont">
+            <FormTrocarSenha obrigatoria />
+          </div>
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }

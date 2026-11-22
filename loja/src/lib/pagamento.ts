@@ -18,18 +18,27 @@ export const ROTULO_PAGAMENTO: Record<string, { texto: string; cls: string }> = 
 
 export function formasAceitas(c: ConfigPagamento): FormaPagamento[] {
   const f: FormaPagamento[] = [];
-  if (c.aceitaPix && c.pixChave.trim()) f.push("PIX");
+  if (c.aceitaPix) f.push("PIX"); // com chave: Pix automático; sem chave: o atendente manda o Pix da maquininha
   if (c.aceitaCartaoLink) f.push("CARTAO_LINK");
   if (c.aceitaNaEntrega) f.push("NA_ENTREGA");
   return f;
 }
 
-/** Pix copia-e-cola com o valor final e o código do pedido, mais o QR em data URL. */
-export async function pixDoPedido(c: ConfigPagamento, valorCentavos: number, codigo: string) {
+/**
+ * Pix que o cliente vê no link do pedido, nesta ordem:
+ * 1) copia e cola colado pelo atendente (maquininha/banco, valor exato);
+ * 2) foto do QR da maquininha; 3) Pix automático pela chave da loja.
+ */
+export async function pixDoPedido(c: ConfigPagamento, valorCentavos: number, codigo: string, manual?: { pixCodigo: string | null; pixQrUrl: string | null }) {
+  if (manual?.pixCodigo) {
+    const qr = await QRCode.toDataURL(manual.pixCodigo, { margin: 1, width: 280, errorCorrectionLevel: "M" });
+    return { codigoPix: manual.pixCodigo, qr, origem: "maquininha" as const };
+  }
+  if (manual?.pixQrUrl) return { codigoPix: null, qr: manual.pixQrUrl, origem: "foto" as const };
   if (!c.pixChave.trim()) return null;
   const codigoPix = pixCopiaECola({ chave: c.pixChave, nome: c.pixNome, cidade: c.pixCidade, valorCentavos, txid: codigo });
   const qr = await QRCode.toDataURL(codigoPix, { margin: 1, width: 280, errorCorrectionLevel: "M" });
-  return { codigoPix, qr };
+  return { codigoPix, qr, origem: "chave" as const };
 }
 
 /** Endereço público do pedido para mandar ao cliente (usa o domínio pelo qual o painel foi aberto). */

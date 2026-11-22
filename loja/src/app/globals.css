@@ -236,3 +236,26 @@ tr.link:hover td { background: #FCF8F0; }
 .ok-box { padding: 12px 14px; border-radius: 12px; background: rgba(111,191,142,.12); border: 1px solid rgba(111,191,142,.4); color: var(--ok-esc); font-size: 14px; }
 .pagar .btn-ouro, .pagar .btn-linha, .pix-codigo { flex: none; }
 .linha-valor .num { white-space: nowrap; }
+.lateral a.quem { display: flex; flex-direction: column; gap: 2px; margin-top: auto; padding: 12px 14px; border-top: 1px solid #2E2925; color: var(--osso); font-size: 14px; }
+.quem small { color: #8F8478; font-size: 12px; }
+.quem:hover b { color: var(--dourado); }
+.acoes-usuario summary { cursor: pointer; font-weight: 600; color: var(--info); font-size: 13px; }
+.acoes-usuario[open] { min-width: 300px; }
+.acoes-usuario select, .acoes-usuario input { height: 34px; padding: 0 10px; border: 1px solid var(--borda); border-radius: 6px; font: inherit; font-size: 13px; }
+.aviso-painel { max-width: 520px; padding: 12px 16px; border-radius: 6px; background: #F5ECD8; border: 1px solid var(--dourado); font-size: 14px; line-height: 1.5; }
+
+/* ---------- Novo pedido (painel) ---------- */
+.novo-pedido { display: flex; flex-direction: column; gap: 18px; }
+.novo-pedido .busca { height: 36px; padding: 0 12px; border: 1px solid var(--borda); border-radius: 6px; font: inherit; font-size: 14px; width: min(320px, 100%); }
+.lista-prod { list-style: none; max-height: 420px; overflow-y: auto; }
+.lista-prod li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 18px; border-bottom: 1px solid var(--borda); }
+.lista-prod li.sel { background: #FBF5E8; }
+.lista-prod li > span:first-child { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.lista-prod small { color: var(--texto-2); font-size: 12.5px; }
+.lista-prod .qtd { display: flex; align-items: center; gap: 10px; }
+.lista-prod .qtd b { min-width: 20px; text-align: center; }
+.barra-novo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; flex-wrap: wrap; position: sticky; bottom: 0; }
+.alterar-pedido summary { cursor: pointer; padding: 14px 16px; font-weight: 700; color: var(--osso); }
+.alterar-pedido .linha-rem { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #241F1B; font-size: 14px; color: #D7CEC0; }
+.alterar-pedido .linha-rem input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--dourado); }
+.alterar-pedido .linha-rem select { background: var(--carvao); color: var(--osso); border: 1px solid var(--borda-esc); border-radius: 8px; height: 34px; padding: 0 8px; }

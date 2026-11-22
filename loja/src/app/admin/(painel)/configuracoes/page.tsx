@@ -1,10 +1,14 @@
+import { exigirPermissao, usuarioAtual } from "@/lib/admin";
+import { pode } from "@/modules/usuarios/permissoes";
 import { FormConfig, FormEntrega, FormPagamento } from "./forms";
 import { configLoja } from "@/lib/dados";
 
 export const dynamic = "force-dynamic";
 
 export default async function Configuracoes() {
+  await exigirPermissao("lojaEntregas");
   const config = await configLoja();
+  const eu = await usuarioAtual();
   return (
     <>
       <div className="topo">
@@ -12,7 +16,7 @@ export default async function Configuracoes() {
       </div>
       <div className="cont">
         <FormEntrega entrega={config.entrega} />
-        <FormPagamento pagamento={config.pagamento} />
+        {eu && pode(eu.papel, "pagamento") && <FormPagamento pagamento={config.pagamento} />}
         <FormConfig config={config} />
       </div>
     </>

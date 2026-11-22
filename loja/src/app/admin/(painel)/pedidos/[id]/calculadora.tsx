@@ -26,7 +26,14 @@ export function CalculadoraPesagem(props: {
   const { pedidoId, codigo, linkCliente, podeEnviar, celularCliente, freteCentavos, freteACombinar, itens, baixaFeita } = props;
   const [estado, acao, enviando] = useActionState<EstadoSeparacao, FormData>(confirmarSeparacao, {});
   const pecas = itens.flatMap((i) => (i.tipoVenda === "PECA" ? Array.from({ length: i.quantidade }, (_, n) => ({ chave: `${i.id}-${n}`, item: i, n })) : []));
-  const registrados = new Map(props.pesagens.map((p) => [`${p.itemId}-${p.peca - 1}`, p.gramas]));
+  // Peças já pesadas, na ordem de cada item (se o cliente tirou uma peça, as que sobraram sobem de posição).
+  const registrados = new Map<string, number>();
+  for (const it of itens) {
+    props.pesagens
+      .filter((p) => p.itemId === it.id)
+      .sort((a, b) => a.peca - b.peca)
+      .forEach((p, n) => registrados.set(`${it.id}-${n}`, p.gramas));
+  }
   const [pesos, setPesos] = useState<Record<string, string>>(
     Object.fromEntries([...registrados].map(([k, g]) => [k, (g / 1000).toLocaleString("pt-BR", { minimumFractionDigits: 3 })])),
   );

@@ -2,8 +2,8 @@ import type { ConfigPagamento, FormaPagamento } from "@/db/schema";
 import { BotaoCopiar } from "@/components/copiar";
 import { formatarReais } from "@/modules/dinheiro";
 import { ROTULO_FORMA, ROTULO_PAGAMENTO } from "@/lib/pagamento";
-import { aceitarPedido, concluirPedido, marcarPago, registrarFormaPeloAtendente } from "./acoes";
-import { FormLinkCartao } from "./link-cartao";
+import { aceitarPedido, concluirPedido, marcarPago, registrarFormaPeloAtendente, revisarAlteracao } from "./acoes";
+import { FormLinkCartao, FormPixMaquininha } from "./link-cartao";
 
 type Pedido = {
   id: number;
@@ -15,6 +15,8 @@ type Pedido = {
   formaPagamento: FormaPagamento | null;
   pagamentoStatus: string;
   linkCartao: string | null;
+  alteracaoCliente: string | null;
+  baixaEstoque: boolean;
 };
 
 const PASSOS = ["Aceitar", "Separar e pesar", "Cliente confirma", "Pagamento", "Entregar"];
@@ -27,7 +29,7 @@ function wa(celular: string, texto: string) {
  * Fluxo guiado do pedido: mostra só o que o atendente precisa fazer agora.
  * NOVO → aceitar · EM_SEPARACAO → pesar · AGUARDANDO_CLIENTE → mandar o link · CONFIRMADO → cobrar e conferir · entregar.
  */
-export function ProximoPasso({ p, celular, link, pix, pagamento }: { p: Pedido; celular: string; link: string; pix: string | null; pagamento: ConfigPagamento }) {
+export function ProximoPasso({ p, celular, link, pix, pixOrigem, pagamento }: { p: Pedido; celular: string; link: string; pix: string | null; pixOrigem: "maquininha" | "foto" | "chave" | null; pagamento: ConfigPagamento }) {
   const nome = p.clienteNome.split(" ")[0];
   const total = p.totalFinalCentavos !== null ? formatarReais(p.totalFinalCentavos) : "";
   const pago = p.pagamentoStatus === "PAGO";
@@ -46,6 +48,18 @@ export function ProximoPasso({ p, celular, link, pix, pagamento }: { p: Pedido; 
         <form action={aceitarPedido}>
           <input type="hidden" name="pedidoId" value={p.id} />
           <button className="btn btn-pri btn-grande">Aceitar e começar a separar</button>
+        </form>
+      </>
+    );
+  } else if (p.status === "EM_SEPARACAO" && p.alteracaoCliente) {
+    titulo = "O cliente alterou o pedido";
+    corpo = (
+      <>
+        <p className="msg-ok" style={{ background: "#FBF0DE", borderColor: "#E8C98A", color: "var(--texto)" }}>{p.alteracaoCliente}</p>
+        <p>O que o cliente tirou já voltou para o estoque no sistema. Devolva as peças à câmara/prateleira, confira o novo total e reenvie ao cliente.</p>
+        <form action={revisarAlteracao}>
+          <input type="hidden" name="pedidoId" value={p.id} />
+          <button className="btn btn-pri btn-grande">Conferido — enviar novo total ao cliente</button>
         </form>
       </>
     );
@@ -86,29 +100,54 @@ export function ProximoPasso({ p, celular, link, pix, pagamento }: { p: Pedido; 
     const botaoPago = (
       <form action={marcarPago}>
         <input type="hidden" name="pedidoId" value={p.id} />
-        <button className={`btn ${informado ? "btn-pri btn-grande" : ""}`}>Confirmar que o pagamento caiu</button>
+        <button className={`btn ${informado ? "btn-pri btn-grande" : ""}`}>Pagamento recebido — dar baixa</button>
       </form>
     );
     if (forma === "PIX") {
+      const temPix = pixOrigem !== null;
       const msg = pix
-        ? `Pedido ${p.codigo} — *${total}*\n\nPix copia e cola (já com o valor):\n${pix}\n\nOu abra o QR Code no link do pedido:\n${link}\n\nAssim que pagar, toque em “Já paguei” no link. Obrigado!`
-        : "";
+        ? `Pedido ${p.codigo} — *${total}*
+
+Pix copia e cola (já com o valor):
+${pix}
+
+Ou abra o QR Code no link do pedido:
+${link}
+
+Assim que pagar, toque em “Já paguei” no link. Obrigado!`
+        : `Pedido ${p.codigo} — *${total}*
+
+O QR Code do Pix está no link do pedido:
+${link}
+
+Assim que pagar, toque em “Já paguei” no link. Obrigado!`;
       corpo = (
         <>
           {informado && <p className="msg-ok">O cliente avisou que pagou. Confira no extrato do banco e confirme.</p>}
-          {pix ? (
+          {temPix && (
             <>
-              <p>O QR Code e o Pix copia e cola já aparecem para o cliente no link do pedido. Se quiser, mande também pelo WhatsApp.</p>
+              <p>
+                {pixOrigem === "chave" ? "O Pix automático (chave da loja) já aparece no link do cliente com o valor certo." : "O Pix da maquininha já aparece no link do cliente."} Se quiser, mande também pelo WhatsApp.
+              </p>
               <div className="linha-botoes">
                 <a className="btn btn-grande" href={wa(celular, msg)} target="_blank" rel="noopener noreferrer">
                   Enviar Pix no WhatsApp ↗
                 </a>
-                <BotaoCopiar texto={pix} rotulo="Copiar Pix" className="btn" />
+                {pix && <BotaoCopiar texto={pix} rotulo="Copiar Pix" className="btn" />}
                 {botaoPago}
               </div>
             </>
+          )}
+          {temPix ? (
+            <details className="manual">
+              <summary>{pixOrigem === "chave" ? "Prefere usar o Pix da maquininha neste pedido?" : "Trocar o Pix da maquininha"}</summary>
+              <FormPixMaquininha pedidoId={p.id} total={total} />
+            </details>
           ) : (
-            <p className="msg-erro">Cadastre a chave Pix da loja em “Loja e entregas” para gerar o Pix automático.</p>
+            <>
+              <FormPixMaquininha pedidoId={p.id} total={total} />
+              <div className="linha-botoes">{botaoPago}</div>
+            </>
           )}
         </>
       );
@@ -198,7 +237,7 @@ export function ProximoPasso({ p, celular, link, pix, pagamento }: { p: Pedido; 
             Link do cliente: <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
           </p>
         )}
-        {!pagamento.pixChave && p.status === "AGUARDANDO_CLIENTE" && <p className="dica">Dica: cadastre a chave Pix em “Loja e entregas” para o cliente pagar pelo QR Code com o valor certo.</p>}
+        {!pagamento.pixChave && p.status === "AGUARDANDO_CLIENTE" && <p className="dica">Se o cliente escolher Pix, você gera o Pix na maquininha com o valor exato e cola no pedido. (Com a chave Pix cadastrada em “Loja e entregas”, isso fica automático.)</p>}
       </div>
     </div>
   );

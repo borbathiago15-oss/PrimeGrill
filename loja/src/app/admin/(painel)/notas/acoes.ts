@@ -4,7 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db, schema } from "@/db";
-import { exigirAdmin } from "@/lib/admin";
+import { exigirPermissao } from "@/lib/admin";
 import { registrarMovimento, saldosPorProduto } from "@/lib/estoque";
 import { reaisParaCentavos } from "@/modules/dinheiro";
 import { pendenteDeFechamento, SALDO_ZERO, valorAceito } from "@/modules/estoque/saldo";
@@ -31,7 +31,7 @@ function qtdParaMil(texto: string): number | null {
 
 /* ---------- Canal 2: XML ---------- */
 export async function importarXml(_: EstadoNota, form: FormData): Promise<EstadoNota> {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("notas");
   const arq = form.get("xml");
   if (!(arq instanceof File) || arq.size === 0) return { erro: "Escolha o arquivo XML da nota." };
   if (arq.size > 2_000_000) return { erro: "Arquivo acima de 2 MB." };
@@ -87,7 +87,7 @@ export async function importarXml(_: EstadoNota, form: FormData): Promise<Estado
 
 /* ---------- Alternativa manual: digitação (PG-P-001) ---------- */
 export async function criarNotaManual(_: EstadoNota, form: FormData): Promise<EstadoNota> {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("notas");
   const cnpj = String(form.get("cnpj") ?? "").replace(/\D/g, "");
   const nome = String(form.get("fornecedor") ?? "").trim();
   const numero = String(form.get("numero") ?? "").trim();
@@ -123,7 +123,7 @@ async function notaPendente(id: number) {
 }
 
 export async function adicionarItem(_: EstadoNota, form: FormData): Promise<EstadoNota> {
-  await exigirAdmin();
+  await exigirPermissao("notas");
   const notaId = Number(form.get("notaId"));
   if (!(await notaPendente(notaId))) return { erro: "Só é possível alterar itens de nota pendente." };
   const descricao = String(form.get("descricao") ?? "").trim();
@@ -147,7 +147,7 @@ export async function adicionarItem(_: EstadoNota, form: FormData): Promise<Esta
 }
 
 export async function removerItem(form: FormData) {
-  await exigirAdmin();
+  await exigirPermissao("notas");
   const notaId = Number(form.get("notaId"));
   if (!(await notaPendente(notaId))) return;
   const banco = await db();
@@ -156,7 +156,7 @@ export async function removerItem(form: FormData) {
 }
 
 export async function recusarNota(form: FormData) {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("notas");
   const notaId = Number(form.get("notaId"));
   if (!(await notaPendente(notaId))) return;
   const banco = await db();
@@ -170,7 +170,7 @@ export async function recusarNota(form: FormData) {
 
 /* ---------- Conferência e confirmação (REC-001 §2) ---------- */
 export async function conferirNota(_: EstadoNota, form: FormData): Promise<EstadoNota> {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("notas");
   const notaId = Number(form.get("notaId"));
   const confirmar = form.get("acao") === "confirmar";
   const nota = await notaPendente(notaId);

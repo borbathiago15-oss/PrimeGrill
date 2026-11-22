@@ -9,7 +9,7 @@ import { AtualizarSozinho, BotaoCopiar } from "@/components/copiar";
 import { formatarDistancia } from "@/modules/entrega/frete";
 import { formatarKg, formatarReais, formatarValor } from "@/modules/dinheiro";
 import { linhaItem, linkWhatsapp, mensagemPedido } from "@/modules/pedidos/whatsapp";
-import { EscolherPagamento, JaPaguei } from "./pagamento-cliente";
+import { AlterarPedido, EscolherPagamento, JaPaguei } from "./pagamento-cliente";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Seu pedido — Prime Grill Paiva", robots: { index: false } };
@@ -28,7 +28,7 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
   const entrega = p.modo === "ENTREGA";
   const pesagens = p.baixaEstoque ? await (await db()).select().from(schema.pedidoPesagens).where(eq(schema.pedidoPesagens.pedidoId, p.id)).orderBy(asc(schema.pedidoPesagens.id)) : [];
   const final = p.totalFinalCentavos;
-  const pix = status === "CONFIRMADO" && p.formaPagamento === "PIX" && p.pagamentoStatus === "PENDENTE" && final !== null ? await pixDoPedido(config.pagamento, final, p.codigo) : null;
+  const pix = status === "CONFIRMADO" && p.formaPagamento === "PIX" && p.pagamentoStatus === "PENDENTE" && final !== null ? await pixDoPedido(config.pagamento, final, p.codigo, { pixCodigo: p.pixCodigo, pixQrUrl: p.pixQrUrl }) : null;
 
   const ETAPAS = [
     { chave: "NOVO", texto: "Pedido recebido" },
@@ -74,7 +74,10 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
         </section>
       )}
 
-      {(status === "NOVO" || status === "EM_SEPARACAO") && (
+      {status === "EM_SEPARACAO" && p.alteracaoCliente && (
+        <p className="aviso">Recebemos sua alteração. A loja está conferindo e o novo total aparece aqui em instantes.</p>
+      )}
+      {(status === "NOVO" || (status === "EM_SEPARACAO" && !p.alteracaoCliente)) && (
         <p className="aviso">
           {status === "NOVO" ? "A loja já recebeu seu pedido. " : "Estamos separando seu pedido agora. "}
           {p.temItemPesado
@@ -126,6 +129,18 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
         </section>
       )}
 
+      {status === "AGUARDANDO_CLIENTE" && (
+        <AlterarPedido
+          codigo={p.codigo}
+          pecas={dados.itens.flatMap((i) =>
+            pesagens
+              .filter((x) => x.itemId === i.id)
+              .map((x) => ({ id: x.id, texto: `${i.nome}${i.quantidade > 1 ? ` (peça ${x.peca})` : ""} · ${formatarKg(x.gramas)}`, valor: formatarReais(x.valorCentavos) })),
+          )}
+          pacotes={dados.itens.filter((i) => i.tipoVenda === "PACOTE").map((i) => ({ id: i.id, nome: i.nome, quantidade: i.quantidade }))}
+        />
+      )}
+
       {status === "AGUARDANDO_CLIENTE" &&
         (opcoes.length ? (
           <EscolherPagamento codigo={p.codigo} opcoes={opcoes} />
@@ -145,12 +160,18 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
               <p className="aviso">Recebemos seu aviso de pagamento. A loja está conferindo e esta página atualiza sozinha.</p>
             ) : p.formaPagamento === "PIX" && pix ? (
               <>
-                <p>Abra o app do seu banco e pague com o QR Code ou com o Pix copia e cola. O valor já vem preenchido.</p>
+                <p>{pix.codigoPix ? "Abra o app do seu banco e pague com o QR Code ou com o Pix copia e cola. O valor já vem preenchido." : "Abra o app do seu banco e leia o QR Code abaixo."}</p>
                 <img src={pix.qr} alt="QR Code do Pix" width={220} height={220} className="qr" />
-                <textarea readOnly value={pix.codigoPix} rows={3} className="pix-codigo" aria-label="Pix copia e cola" />
-                <BotaoCopiar texto={pix.codigoPix} rotulo="Copiar Pix copia e cola" className="btn-ouro centro" />
+                {pix.codigoPix && (
+                  <>
+                    <textarea readOnly value={pix.codigoPix} rows={3} className="pix-codigo" aria-label="Pix copia e cola" />
+                    <BotaoCopiar texto={pix.codigoPix} rotulo="Copiar Pix copia e cola" className="btn-ouro centro" />
+                  </>
+                )}
                 <JaPaguei codigo={p.codigo} />
               </>
+            ) : p.formaPagamento === "PIX" ? (
+              <p className="aviso">A loja está gerando o Pix com o valor exato. Ele aparece aqui e no seu WhatsApp em instantes.</p>
             ) : p.formaPagamento === "CARTAO_LINK" ? (
               p.linkCartao ? (
                 <>

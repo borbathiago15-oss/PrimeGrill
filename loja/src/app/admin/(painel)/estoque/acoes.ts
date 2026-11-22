@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/db";
-import { exigirAdmin } from "@/lib/admin";
+import { exigirPermissao } from "@/lib/admin";
 import { registrarMovimento, travarSaldo } from "@/lib/estoque";
 import { custoMedio, pendenteDeFechamento } from "@/modules/estoque/saldo";
 
@@ -11,7 +11,7 @@ export type EstadoEstoque = { erro?: string; ok?: string };
 
 /** EST-001 §4: zera o peso restante de peça inteira sem peças como quebra (motivo obrigatório). */
 export async function fecharQuebra(_: EstadoEstoque, form: FormData): Promise<EstadoEstoque> {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("estoqueAjustar");
   const produtoId = Number(form.get("produtoId"));
   const motivo = String(form.get("motivo") ?? "").trim();
   if (motivo.length < 3) return { erro: "Informe o motivo da quebra." };
@@ -31,7 +31,7 @@ export async function fecharQuebra(_: EstadoEstoque, form: FormData): Promise<Es
 
 /** Ajuste com motivo (inventário, correção). Alternativa manual auditada — PG-P-001. */
 export async function ajustarEstoque(_: EstadoEstoque, form: FormData): Promise<EstadoEstoque> {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("estoqueAjustar");
   const produtoId = Number(form.get("produtoId"));
   const sentido = form.get("sentido") === "saida" ? "saida" : "entrada";
   const motivo = String(form.get("motivo") ?? "").trim();

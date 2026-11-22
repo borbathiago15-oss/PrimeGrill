@@ -168,7 +168,7 @@ export function FormPagamento({ pagamento }: { pagamento: ConfigPagamento }) {
     <form action={acao} className="cartao">
       <div className="cartao-h">
         <h2>Pagamento</h2>
-        {pagamento.pixChave ? <span className="chip ok">Pix configurado</span> : <span className="chip at">Sem chave Pix</span>}
+        {pagamento.pixChave ? <span className="chip ok">Pix automático</span> : <span className="chip at">Pix pela maquininha</span>}
       </div>
       {estado.erro && <p className="msg-erro" style={{ margin: "14px 18px 0" }}>{estado.erro}</p>}
       {estado.ok && <p className="msg-ok" style={{ margin: "14px 18px 0" }}>{estado.ok}</p>}
@@ -176,7 +176,7 @@ export function FormPagamento({ pagamento }: { pagamento: ConfigPagamento }) {
         <div className="f cheio">
           <label htmlFor="pixChave">Chave Pix da loja</label>
           <input id="pixChave" name="pixChave" defaultValue={pagamento.pixChave} placeholder="CNPJ, e-mail, celular (+55...) ou chave aleatória" maxLength={77} autoComplete="off" />
-          <small>O cliente recebe, no link do pedido, o QR Code e o Pix copia e cola já com o valor final e o código do pedido.</small>
+          <small>Opcional. Com a chave, o link do pedido já mostra o QR Code com o valor final. Sem a chave, o atendente cola em cada pedido o Pix gerado na maquininha.</small>
         </div>
         <div className="f">
           <label htmlFor="pixNome">Nome do recebedor (como no banco)</label>

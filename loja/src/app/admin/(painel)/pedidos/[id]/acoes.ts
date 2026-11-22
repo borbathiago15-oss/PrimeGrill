@@ -157,3 +157,39 @@ export async function concluirPedido(form: FormData) {
     ["CONFIRMADO"],
   );
 }
+
+/** Pix gerado na maquininha/banco com o valor exato: o atendente cola o copia e cola ou manda a foto do QR. */
+export async function salvarPixManual(_: EstadoSeparacao, form: FormData): Promise<EstadoSeparacao> {
+  const autor = await exigirAdmin();
+  const id = Number(form.get("pedidoId"));
+  const texto = String(form.get("codigo") ?? "").trim();
+  const foto = form.get("foto");
+  const banco = await db();
+  const [ped] = await banco.select().from(pedidos).where(eq(pedidos.id, id));
+  if (!ped || ped.status !== "CONFIRMADO") return { erro: "O pedido precisa estar confirmado pelo cliente." };
+  const { lerPixCopiaECola } = await import("@/modules/pagamento/pix");
+  const { formatarReais } = await import("@/modules/dinheiro");
+
+  if (texto) {
+    const r = lerPixCopiaECola(texto);
+    if (!r.ok) return { erro: r.erro };
+    if (r.valorCentavos !== null && ped.totalFinalCentavos !== null && r.valorCentavos !== ped.totalFinalCentavos)
+      return { erro: `Esse Pix é de ${formatarReais(r.valorCentavos)}, mas o total do pedido é ${formatarReais(ped.totalFinalCentavos)}. Gere de novo com o valor exato.` };
+    await registrar(id, { pixCodigo: r.codigo, pixQrUrl: null, formaPagamento: "PIX" }, "CONFIRMADO", "Pix da maquininha anexado (copia e cola)", autor, ["CONFIRMADO"]);
+    return { ok: r.valorCentavos === null ? "Pix salvo. Atenção: esse código não traz valor; o cliente vai digitar o valor." : "Pix salvo com o valor exato. Ele já aparece no link do cliente." };
+  }
+  if (foto instanceof File && foto.size > 0) {
+    const { salvarFoto } = await import("@/lib/arquivos");
+    const r = await salvarFoto(foto, "pix");
+    if (!r.ok) return { erro: r.erro };
+    await registrar(id, { pixQrUrl: r.url, pixCodigo: null, formaPagamento: "PIX" }, "CONFIRMADO", "QR Code do Pix da maquininha anexado (foto)", autor, ["CONFIRMADO"]);
+    return { ok: "Foto do QR salva. Ela já aparece no link do cliente." };
+  }
+  return { erro: "Cole o Pix copia e cola ou escolha a foto do QR Code." };
+}
+
+/** Loja revisou a alteração do cliente (devolveu as peças à prateleira) e reenvia o novo total. */
+export async function revisarAlteracao(form: FormData) {
+  const autor = await exigirAdmin();
+  await registrar(Number(form.get("pedidoId")), { status: "AGUARDANDO_CLIENTE", alteracaoCliente: null }, "AGUARDANDO_CLIENTE", "Alteração do cliente revisada; novo total pronto para envio", autor, ["EM_SEPARACAO"]);
+}

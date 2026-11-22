@@ -1,3 +1,4 @@
+import { exigirPermissao } from "@/lib/admin";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
@@ -8,6 +9,7 @@ import { formatarValor } from "@/modules/dinheiro";
 export const dynamic = "force-dynamic";
 
 export default async function EditarProduto({ params }: { params: Promise<{ id: string }> }) {
+  await exigirPermissao("produtosEditar");
   const { id } = await params;
   const banco = await db();
   const cats = await banco.select().from(schema.categorias).orderBy(asc(schema.categorias.ordem));

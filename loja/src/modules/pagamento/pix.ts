@@ -50,3 +50,28 @@ export function pixCopiaECola(d: DadosPix): string {
   payload += "6304";
   return payload + crc16(payload);
 }
+
+/**
+ * Lê um Pix copia e cola gerado fora do sistema (maquininha, app do banco).
+ * Confere o formato e o dígito (CRC) e devolve o valor, quando o código traz valor.
+ */
+export function lerPixCopiaECola(bruto: string): { ok: true; codigo: string; valorCentavos: number | null } | { ok: false; erro: string } {
+  const codigo = bruto.trim().split("").filter((ch) => ch >= " ").join("");
+  if (!codigo.startsWith("000201") || codigo.length < 50 || codigo.length > 512) return { ok: false, erro: "Isso não parece um Pix copia e cola (começa com 000201)." };
+  if (codigo.slice(-8, -4) !== "6304" || crc16(codigo.slice(0, -4)) !== codigo.slice(-4).toUpperCase())
+    return { ok: false, erro: "O código Pix está incompleto ou foi copiado errado. Copie de novo da maquininha." };
+  let i = 0;
+  let valorCentavos: number | null = null;
+  let temPix = false;
+  while (i + 4 <= codigo.length - 8) {
+    const id = codigo.slice(i, i + 2);
+    const tam = Number(codigo.slice(i + 2, i + 4));
+    if (!Number.isInteger(tam)) return { ok: false, erro: "Código Pix inválido." };
+    const v = codigo.slice(i + 4, i + 4 + tam);
+    if (id === "54") valorCentavos = Math.round(Number(v) * 100);
+    if (Number(id) >= 26 && Number(id) <= 51 && v.toLowerCase().includes("br.gov.bcb.pix")) temPix = true;
+    i += 4 + tam;
+  }
+  if (!temPix) return { ok: false, erro: "Esse código não é de Pix." };
+  return { ok: true, codigo, valorCentavos: valorCentavos !== null && Number.isFinite(valorCentavos) ? valorCentavos : null };
+}

@@ -13,13 +13,13 @@ export function tipoImagem(b: Uint8Array): "jpg" | "png" | "webp" | null {
   return null;
 }
 
-export async function salvarFoto(arquivo: File): Promise<{ ok: true; url: string } | { ok: false; erro: string }> {
+export async function salvarFoto(arquivo: File, pasta: "produtos" | "pix" = "produtos"): Promise<{ ok: true; url: string } | { ok: false; erro: string }> {
   if (arquivo.size === 0) return { ok: false, erro: "Arquivo vazio." };
   if (arquivo.size > MAX_BYTES) return { ok: false, erro: "Foto acima de 5 MB." };
   const bytes = new Uint8Array(await arquivo.arrayBuffer());
   const tipo = tipoImagem(bytes);
   if (!tipo) return { ok: false, erro: "Envie uma foto JPG, PNG ou WebP." };
-  const nome = `produtos/${randomUUID()}.${tipo}`;
+  const nome = `${pasta}/${randomUUID()}.${tipo}`;
 
   // Na Vercel, o Blob conectado ao projeto expõe BLOB_STORE_ID (autenticação OIDC) ou um token de leitura/escrita.
   if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) {

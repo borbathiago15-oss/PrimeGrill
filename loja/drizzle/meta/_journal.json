@@ -29,6 +29,27 @@
       "when": 1795304755062,
       "tag": "0003_pagamento",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795305927964,
+      "tag": "0004_usuarios",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795306155867,
+      "tag": "0005_pix_maquininha",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795306402859,
+      "tag": "0006_origem_alteracao",
+      "breakpoints": true
     }
   ]
 }

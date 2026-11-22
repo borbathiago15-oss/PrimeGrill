@@ -5,6 +5,8 @@ import { CalculadoraPesagem } from "./calculadora";
 import { ProximoPasso } from "./proximo-passo";
 import { AtualizarSozinho } from "@/components/copiar";
 import { linkDoPedido, pixDoPedido } from "@/lib/pagamento";
+import { usuarioAtual } from "@/lib/admin";
+import { pode } from "@/modules/usuarios/permissoes";
 import { ROTULO_STATUS, pedidoCompleto } from "@/lib/pedidos";
 import { db, schema } from "@/db";
 import { eq } from "drizzle-orm";
@@ -27,7 +29,8 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
   const destino = [p.endereco && `${p.endereco}, ${p.numero}`, p.bairro, p.cidade, p.cep].filter(Boolean).join(", ");
   const origem = config.entrega.lat !== null ? `${config.entrega.lat},${config.entrega.lng}` : config.entrega.endereco;
   const link = await linkDoPedido(p.codigo);
-  const pix = p.totalFinalCentavos !== null && p.formaPagamento === "PIX" ? await pixDoPedido(config.pagamento, p.totalFinalCentavos, p.codigo) : null;
+  const eu = await usuarioAtual();
+  const pix = p.totalFinalCentavos !== null && p.formaPagamento === "PIX" ? await pixDoPedido(config.pagamento, p.totalFinalCentavos, p.codigo, { pixCodigo: p.pixCodigo, pixQrUrl: p.pixQrUrl }) : null;
   const rota = p.modo === "ENTREGA" ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}` : null;
 
   return (
@@ -45,7 +48,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
       </div>
       <AtualizarSozinho />
       <div className="cont">
-        <ProximoPasso p={p} celular={celular} link={link} pix={pix?.codigoPix ?? null} pagamento={config.pagamento} />
+        <ProximoPasso p={p} celular={celular} link={link} pix={pix?.codigoPix ?? null} pixOrigem={pix?.origem ?? null} pagamento={config.pagamento} />
       </div>
       <div className="cont det" style={{ paddingTop: 0 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -101,7 +104,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
           {p.status !== "CANCELADO" && p.status !== "NOVO" && (
             <CalculadoraPesagem
               linkCliente={link}
-              podeEnviar={p.status === "EM_SEPARACAO" || p.status === "AGUARDANDO_CLIENTE"}
+              podeEnviar={p.status === "AGUARDANDO_CLIENTE" || (p.status === "EM_SEPARACAO" && !p.alteracaoCliente)}
               pedidoId={p.id}
               baixaFeita={p.baixaEstoque}
               pesagens={pesagens.map((x) => ({ itemId: x.itemId, peca: x.peca, gramas: x.gramas, valorCentavos: x.valorCentavos }))}
@@ -150,6 +153,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               <dd>{p.optinWhatsapp ? "Aceitou" : "Não aceitou"}</dd>
             </dl>
           </div>
+          {eu && pode(eu.papel, "pedidosAjusteManual") && (
           <details className="cartao manual-status">
           <summary>Ajuste manual de status / cancelar pedido</summary>
           <form action={mudarStatus}>
@@ -175,6 +179,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
             </div>
           </form>
           </details>
+          )}
           <div className="cartao">
             <div className="cartao-h">
               <h2>Histórico</h2>

@@ -116,6 +116,14 @@ export const pedidos = pgTable(
     /** PENDENTE → INFORMADO (cliente diz que pagou) → PAGO (loja conferiu). */
     pagamentoStatus: text("pagamento_status").$type<PagamentoStatus>().notNull().default("PENDENTE"),
     linkCartao: text("link_cartao"),
+    /** Pix gerado na maquininha/banco com o valor exato (copia e cola colado pelo atendente). */
+    pixCodigo: text("pix_codigo"),
+    /** Foto do QR Code do Pix da maquininha, quando não há o copia e cola. */
+    pixQrUrl: text("pix_qr_url"),
+    /** De onde veio: loja online, ou lançado no painel a partir do WhatsApp/balcão. */
+    origem: text("origem").$type<"LOJA_ONLINE" | "WHATSAPP" | "BALCAO">().notNull().default("LOJA_ONLINE"),
+    /** O que o cliente mudou depois de ver o valor final (a loja revisa e reenvia). */
+    alteracaoCliente: text("alteracao_cliente"),
     pagoEm: timestamp("pago_em", { withTimezone: true }),
     cidade: text("cidade"),
     subtotalEstimadoCentavos: integer("subtotal_estimado_centavos").notNull(),
@@ -279,3 +287,29 @@ export const pedidoPesagens = pgTable("pedido_pesagens", {
   autor: text("autor").notNull(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* ---------------- Usuários do painel ---------------- */
+export const PAPEIS = ["DONO", "GERENTE", "ATENDENTE"] as const;
+export type Papel = (typeof PAPEIS)[number];
+
+export const usuarios = pgTable(
+  "usuarios",
+  {
+    id: serial("id").primaryKey(),
+    nome: text("nome").notNull(),
+    /** Sempre em minúsculas. */
+    email: text("email").notNull(),
+    /** bcrypt; a senha em si nunca é guardada. */
+    senhaHash: text("senha_hash").notNull(),
+    papel: text("papel").$type<Papel>().notNull(),
+    ativo: boolean("ativo").notNull().default(true),
+    /** Senha provisória definida pelo dono: obriga a criar a própria no primeiro acesso. */
+    deveTrocarSenha: boolean("deve_trocar_senha").notNull().default(true),
+    /** Sobe a cada troca de senha/papel/desativação: derruba sessões antigas. */
+    sessaoVersao: integer("sessao_versao").notNull().default(1),
+    ultimoAcesso: timestamp("ultimo_acesso", { withTimezone: true }),
+    criadoPor: text("criado_por").notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("usuarios_email_uq").on(t.email)],
+);

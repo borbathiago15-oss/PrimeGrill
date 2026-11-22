@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db, schema } from "@/db";
 import { STATUS_PEDIDO, type ConfigLoja } from "@/db/schema";
-import { exigirAdmin } from "@/lib/admin";
+import { exigirPermissao } from "@/lib/admin";
 import { salvarFoto } from "@/lib/arquivos";
 import { configLoja } from "@/lib/dados";
 import { kgParaGramas, reaisParaCentavos } from "@/modules/dinheiro";
@@ -26,7 +26,7 @@ function slugify(s: string) {
 
 /* ---------------- Pedidos ---------------- */
 export async function mudarStatus(form: FormData) {
-  const autor = await exigirAdmin();
+  const autor = await exigirPermissao("pedidosAjusteManual");
   const id = Number(form.get("id"));
   const status = z.enum(STATUS_PEDIDO).parse(form.get("status"));
   const nota = String(form.get("nota") ?? "").trim().slice(0, 300);
@@ -47,7 +47,7 @@ export async function mudarStatus(form: FormData) {
 export type EstadoForm = { erro?: string; ok?: string };
 
 export async function salvarProduto(_: EstadoForm, form: FormData): Promise<EstadoForm> {
-  await exigirAdmin();
+  await exigirPermissao("produtosEditar");
   const id = Number(form.get("id")) || null;
   const nome = String(form.get("nome") ?? "").trim();
   const tipoVenda = String(form.get("tipoVenda")) as "PECA" | "PACOTE";
@@ -110,7 +110,7 @@ export async function salvarProduto(_: EstadoForm, form: FormData): Promise<Esta
 }
 
 export async function alternarDisponivel(form: FormData) {
-  await exigirAdmin();
+  await exigirPermissao("produtosDisponibilidade");
   const id = Number(form.get("id"));
   const banco = await db();
   const [p] = await banco.select({ d: produtos.disponivel }).from(produtos).where(eq(produtos.id, id));
@@ -120,7 +120,7 @@ export async function alternarDisponivel(form: FormData) {
 
 /* ---------------- Loja e entregas ---------------- */
 export async function salvarConfig(_: EstadoForm, form: FormData): Promise<EstadoForm> {
-  await exigirAdmin();
+  await exigirPermissao("lojaEntregas");
   const atual = await configLoja();
   const horarios = atual.horarios.map((h) => {
     const abre = String(form.get(`abre-${h.dia}`) ?? h.abre);
@@ -154,7 +154,7 @@ const MAX_FAIXAS = 8; // espelha o formulário de entrega
 
 /** Endereço da loja (ponto de saída) e faixas de frete por distância. */
 export async function salvarEntrega(_: EstadoForm, form: FormData): Promise<EstadoForm> {
-  await exigirAdmin();
+  await exigirPermissao("lojaEntregas");
   const atual = await configLoja();
   const endereco = String(form.get("endereco") ?? "").trim().slice(0, 160);
   const latTxt = String(form.get("lat") ?? "").trim().replace(",", ".");
@@ -207,7 +207,7 @@ export async function salvarEntrega(_: EstadoForm, form: FormData): Promise<Esta
 
 /** Chave Pix e formas de pagamento aceitas no link do pedido. */
 export async function salvarPagamento(_: EstadoForm, form: FormData): Promise<EstadoForm> {
-  await exigirAdmin();
+  await exigirPermissao("pagamento");
   const atual = await configLoja();
   const pixChave = String(form.get("pixChave") ?? "").trim().slice(0, 77);
   const pixNome = String(form.get("pixNome") ?? "").trim().slice(0, 60);
@@ -215,8 +215,7 @@ export async function salvarPagamento(_: EstadoForm, form: FormData): Promise<Es
   const aceitaPix = form.get("aceitaPix") === "on";
   const aceitaCartaoLink = form.get("aceitaCartaoLink") === "on";
   const aceitaNaEntrega = form.get("aceitaNaEntrega") === "on";
-  if (aceitaPix && !pixChave) return { erro: "Para aceitar Pix, informe a chave Pix da loja." };
-  if (aceitaPix && (!pixNome || !pixCidade)) return { erro: "Informe o nome do recebedor e a cidade (aparecem no Pix)." };
+  if (pixChave && (!pixNome || !pixCidade)) return { erro: "Informe o nome do recebedor e a cidade (aparecem no Pix)." };
   if (!aceitaPix && !aceitaCartaoLink && !aceitaNaEntrega) return { erro: "Deixe pelo menos uma forma de pagamento ativa." };
   const dados: ConfigLoja = { ...atual, pagamento: { pixChave, pixNome, pixCidade, aceitaPix, aceitaCartaoLink, aceitaNaEntrega } };
   const banco = await db();

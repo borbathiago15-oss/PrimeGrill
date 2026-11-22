@@ -1,3 +1,5 @@
+import { usuarioAtual } from "@/lib/admin";
+import { pode } from "@/modules/usuarios/permissoes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
@@ -19,6 +21,8 @@ const TIPO: Record<string, string> = {
 };
 
 export default async function ProdutoEstoque({ params }: { params: Promise<{ id: string }> }) {
+  const eu = await usuarioAtual();
+  const podeAjustar = !!eu && pode(eu.papel, "estoqueAjustar");
   const { id } = await params;
   const banco = await db();
   const [p] = await banco.select().from(schema.produtos).where(eq(schema.produtos.id, Number(id)));
@@ -65,8 +69,8 @@ export default async function ProdutoEstoque({ params }: { params: Promise<{ id:
             <small>pelo custo médio</small>
           </div>
         </div>
-        {pendenteDeFechamento(s, p.tipoVenda) && <FormQuebra produtoId={p.id} gramas={s.gramas} />}
-        <FormAjuste produtoId={p.id} tipoVenda={p.tipoVenda} />
+        {podeAjustar && pendenteDeFechamento(s, p.tipoVenda) && <FormQuebra produtoId={p.id} gramas={s.gramas} />}
+        {podeAjustar && <FormAjuste produtoId={p.id} tipoVenda={p.tipoVenda} />}
         <div className="cartao tabela-rolar">
           <div className="cartao-h">
             <h2>Movimentações</h2>

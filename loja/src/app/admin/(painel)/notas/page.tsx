@@ -1,3 +1,4 @@
+import { exigirPermissao } from "@/lib/admin";
 import Link from "next/link";
 import { desc, eq, sql } from "drizzle-orm";
 import { FormManual, FormXml } from "./forms";
@@ -8,6 +9,7 @@ import { dataBr as data, ROTULO_NOTA } from "./rotulos";
 export const dynamic = "force-dynamic";
 
 export default async function Notas() {
+  await exigirPermissao("notas");
   const banco = await db();
   const { notasEntrada, fornecedores, notaItens } = schema;
   const lista = await banco

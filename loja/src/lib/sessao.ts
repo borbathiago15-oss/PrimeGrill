@@ -2,6 +2,7 @@ import { jwtVerify, SignJWT } from "jose";
 
 export const COOKIE = "pg_admin";
 const DURACAO_S = 60 * 60 * 12;
+const PAPEIS_VALIDOS = ["DONO", "GERENTE", "ATENDENTE"];
 
 function chave(): Uint8Array {
   const s = process.env.SESSION_SECRET;
@@ -9,19 +10,25 @@ function chave(): Uint8Array {
   return new TextEncoder().encode(s);
 }
 
-export async function criarToken(email: string): Promise<string> {
-  return new SignJWT({ sub: email, papel: "admin" })
+/** uid 0 = acesso principal (dono configurado nas variáveis da Vercel). */
+export type DadosSessao = { email: string; uid: number; sv: number };
+
+export async function criarToken(d: DadosSessao & { papel: string }): Promise<string> {
+  return new SignJWT({ sub: d.email, uid: d.uid, sv: d.sv, papel: d.papel })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${DURACAO_S}s`)
     .sign(chave());
 }
 
-export async function validarToken(token: string | undefined): Promise<string | null> {
+/** Só confere assinatura e validade (serve no middleware). Ativo/papel atual são checados no banco. */
+export async function validarToken(token: string | undefined): Promise<DadosSessao | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, chave(), { algorithms: ["HS256"] });
-    return payload.papel === "admin" && typeof payload.sub === "string" ? payload.sub : null;
+    if (typeof payload.sub !== "string" || typeof payload.uid !== "number" || typeof payload.sv !== "number") return null;
+    if (!PAPEIS_VALIDOS.includes(String(payload.papel))) return null;
+    return { email: payload.sub, uid: payload.uid, sv: payload.sv };
   } catch {
     return null;
   }

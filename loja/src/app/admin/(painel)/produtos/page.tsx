@@ -1,3 +1,5 @@
+import { usuarioAtual } from "@/lib/admin";
+import { pode } from "@/modules/usuarios/permissoes";
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import { alternarDisponivel } from "../acoes";
@@ -15,6 +17,8 @@ export default async function Produtos({ searchParams }: { searchParams: Promise
     .from(produtos)
     .innerJoin(categorias, eq(produtos.categoriaId, categorias.id))
     .orderBy(asc(categorias.ordem), asc(produtos.ordem), asc(produtos.nome));
+  const eu = await usuarioAtual();
+  const edita = !!eu && pode(eu.papel, "produtosEditar");
   const semPeso = lista.filter(({ p }) => p.tipoVenda === "PECA" && !p.pesoMedioGramas).length;
 
   return (
@@ -23,9 +27,11 @@ export default async function Produtos({ searchParams }: { searchParams: Promise
         <h1>Produtos e preços</h1>
         <span className="rotulo">{lista.length} produtos</span>
         <div className="esp" />
-        <Link href="/admin/produtos/novo" className="btn btn-pri">
-          + Novo produto
-        </Link>
+        {edita && (
+          <Link href="/admin/produtos/novo" className="btn btn-pri">
+            + Novo produto
+          </Link>
+        )}
       </div>
       <div className="cont">
         {salvo && <p className="msg-ok">Produto salvo. A loja já mostra a alteração.</p>}
@@ -51,7 +57,7 @@ export default async function Produtos({ searchParams }: { searchParams: Promise
               {lista.map(({ p, cat }) => (
                 <tr key={p.id}>
                   <td>
-                    <Link href={`/admin/produtos/${p.id}`} className="prod-l">
+                    <Link href={edita ? `/admin/produtos/${p.id}` : "#"} className="prod-l">
                       {p.fotoUrl ? <img src={p.fotoUrl} alt="" /> : <span className="sem" />}
                       <span>
                         <b>{p.nome}</b>
@@ -88,9 +94,11 @@ export default async function Produtos({ searchParams }: { searchParams: Promise
                       <input type="hidden" name="id" value={p.id} />
                       <button className="btn btn-pq">{p.disponivel ? "Marcar indisponível" : "Marcar disponível"}</button>
                     </form>{" "}
-                    <Link href={`/admin/produtos/${p.id}`} className="btn btn-pq">
-                      Editar
-                    </Link>
+                    {edita && (
+                      <Link href={`/admin/produtos/${p.id}`} className="btn btn-pq">
+                        Editar
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}

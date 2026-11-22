@@ -1,3 +1,4 @@
+import { exigirPermissao } from "@/lib/admin";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
@@ -11,6 +12,7 @@ import { formatarReais } from "@/modules/dinheiro";
 export const dynamic = "force-dynamic";
 
 export default async function Nota({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ confirmada?: string }> }) {
+  await exigirPermissao("notas");
   const { id } = await params;
   const { confirmada } = await searchParams;
   const banco = await db();
