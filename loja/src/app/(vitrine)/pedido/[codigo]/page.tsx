@@ -12,6 +12,8 @@ import { linhaItem, linkWhatsapp, mensagemPedido } from "@/modules/pedidos/whats
 import { AlterarPedido, EscolherPagamento, JaPaguei } from "./pagamento-cliente";
 import { ChatPedido } from "@/components/chat";
 import { LembrarPedido } from "@/components/app-instalavel";
+import { AtivarAvisos } from "@/components/ativar-avisos";
+import { aceitaAdicionar } from "@/lib/adicionar-itens";
 import { enviarChatCliente, lerChatCliente } from "./chat-acoes";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +61,7 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
       </div>
       <h1>{status === "NOVO" ? `Pedido ${p.codigo} recebido, ${primeiroNome}!` : `Pedido ${p.codigo}`}</h1>
 
+      {status !== "CANCELADO" && status !== "CONCLUIDO" && <AtivarAvisos publico="CLIENTE" codigo={p.codigo} tema="escuro" />}
       {status === "CANCELADO" ? (
         <p className="erro-box">Este pedido foi cancelado. Fale com a gente pelo WhatsApp se tiver dúvidas.</p>
       ) : (
@@ -226,6 +229,12 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
             </div>
           </div>
         </section>
+      )}
+
+      {aceitaAdicionar(p) && (
+        <Link href={`/?adicionar=${p.codigo}`} className="btn-linha">
+          + Adicionar mais itens a este pedido
+        </Link>
       )}
 
       {status !== "CANCELADO" && (

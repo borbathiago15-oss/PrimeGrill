@@ -1,4 +1,5 @@
 "use server";
+import { avisarCliente, avisarLoja } from "@/lib/push";
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -32,6 +33,7 @@ export async function escolherPagamento(_: EstadoCliente, form: FormData): Promi
     return true;
   });
   if (!ok) return { erro: "Este pedido não está mais aguardando confirmação. Atualize a página." };
+  avisarLoja(codigo.data, (x) => ({ titulo: `${x.codigo} confirmado pelo cliente`, corpo: `${x.cliente} confirmou o valor e escolheu ${ROTULO_FORMA[forma.data]}.` }));
   revalidatePath(`/pedido/${codigo.data}`);
   return {};
 }
@@ -52,6 +54,7 @@ export async function avisarPagamento(_: EstadoCliente, form: FormData): Promise
     return true;
   });
   if (!ok) return { erro: "Não foi possível registrar. Atualize a página." };
+  avisarLoja(codigo.data, (x) => ({ titulo: `${x.codigo}: cliente avisou que pagou`, corpo: `Confira o pagamento de ${x.cliente} e dê baixa.` }));
   revalidatePath(`/pedido/${codigo.data}`);
   return {};
 }
@@ -101,6 +104,7 @@ export async function alterarPedidoCliente(_: EstadoCliente, form: FormData): Pr
       await devolver(item.produtoId, "PECA", { gramas: ps.gramas, pecas: 1 });
       await tx.delete(pedidoPesagens).where(eq(pedidoPesagens.id, ps.id));
       item.quantidade -= 1;
+      item.separados = Math.max(0, item.separados - 1);
       mudancas.push(`tirou ${item.nome} (${formatarKg(ps.gramas)})`);
     }
     for (const item of itens.filter((i) => i.tipoVenda === "PACOTE")) {
@@ -111,6 +115,7 @@ export async function alterarPedidoCliente(_: EstadoCliente, form: FormData): Pr
       await devolver(item.produtoId, "PACOTE", { unidades: item.quantidade - nova });
       mudancas.push(nova === 0 ? `tirou ${item.nome}` : `${item.nome}: ${item.quantidade} → ${nova}`);
       item.quantidade = nova;
+      item.separados = Math.min(item.separados, nova);
     }
     // Erros aqui desfazem tudo (rollback): nada volta ao estoque pela metade.
     if (!mudancas.length) throw new ErroCliente("Marque o que você quer tirar do pedido.");
@@ -118,7 +123,7 @@ export async function alterarPedidoCliente(_: EstadoCliente, form: FormData): Pr
 
     for (const i of itens) {
       if (i.quantidade <= 0) await tx.delete(pedidoItens).where(eq(pedidoItens.id, i.id));
-      else await tx.update(pedidoItens).set({ quantidade: i.quantidade, valorCentavos: i.tipoVenda === "PACOTE" ? i.precoCentavos * i.quantidade : i.valorCentavos }).where(eq(pedidoItens.id, i.id));
+      else await tx.update(pedidoItens).set({ quantidade: i.quantidade, separados: i.separados, valorCentavos: i.tipoVenda === "PACOTE" ? i.precoCentavos * i.quantidade : i.valorCentavos }).where(eq(pedidoItens.id, i.id));
     }
     const restantes = await tx.select().from(pedidoPesagens).where(eq(pedidoPesagens.pedidoId, ped.id));
     const total = restantes.reduce((s, x) => s + x.valorCentavos, 0) + itens.filter((i) => i.tipoVenda === "PACOTE" && i.quantidade > 0).reduce((s, i) => s + i.precoCentavos * i.quantidade, 0) + ped.freteCentavos;
@@ -131,8 +136,25 @@ export async function alterarPedidoCliente(_: EstadoCliente, form: FormData): Pr
     throw e;
   });
   if (r.erro) return r;
+  avisarLoja(codigo.data, (x) => ({ titulo: `${x.codigo}: cliente alterou o pedido`, corpo: `${x.cliente} tirou itens. Confira o novo total e reenvie.` }));
   revalidatePath(`/pedido/${codigo.data}`);
   return {};
 }
 
 class ErroCliente extends Error {}
+
+/** Cliente acrescenta itens ao próprio pedido pelo cardápio (modo "adicionar ao pedido"). */
+export async function adicionarItensCliente(codigo: string, itens: { produtoId: number; quantidade: number }[]): Promise<{ erro?: string }> {
+  const c = Codigo.safeParse(codigo);
+  if (!c.success || !Array.isArray(itens) || itens.length > 40) return { erro: "Pedido inválido." };
+  const { adicionarItens } = await import("@/lib/adicionar-itens");
+  const r = await adicionarItens(
+    { codigo: c.data },
+    itens.map((i) => ({ produtoId: Number(i.produtoId), quantidade: Math.min(20, Number(i.quantidade)) })),
+    { autor: "cliente (link do pedido)", nota: "Cliente acrescentou itens" },
+  );
+  if (!r.ok) return { erro: r.erro };
+  avisarLoja(c.data, (x) => ({ titulo: `${x.codigo}: cliente acrescentou itens`, corpo: `${x.cliente}: ${r.resumo}. Separe e pese o que é novo.` }));
+  revalidatePath(`/pedido/${c.data}`);
+  return {};
+}

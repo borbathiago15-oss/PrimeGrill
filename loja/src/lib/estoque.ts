@@ -71,10 +71,11 @@ export const STATUS_QUE_RESERVAM = ["NOVO", "EM_SEPARACAO"] as const;
 
 /** Reservado por produto: itens de pedidos abertos que ainda não deram baixa. */
 export async function reservasPorProduto(banco: Db | Tx, produtoIds?: number[]): Promise<Map<number, number>> {
-  const cond = [inArray(pedidos.status, [...STATUS_QUE_RESERVAM]), eq(pedidos.baixaEstoque, false)];
+  // Reserva o que ainda não saiu do estoque: itens novos de um pedido já pesado também ficam reservados.
+  const cond = [inArray(pedidos.status, [...STATUS_QUE_RESERVAM])];
   if (produtoIds?.length) cond.push(inArray(pedidoItens.produtoId, produtoIds));
   const linhas = await banco
-    .select({ produtoId: pedidoItens.produtoId, qtd: sql<number>`sum(${pedidoItens.quantidade})::int` })
+    .select({ produtoId: pedidoItens.produtoId, qtd: sql<number>`sum(${pedidoItens.quantidade} - ${pedidoItens.separados})::int` })
     .from(pedidoItens)
     .innerJoin(pedidos, eq(pedidoItens.pedidoId, pedidos.id))
     .where(and(...cond))

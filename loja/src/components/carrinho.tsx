@@ -96,13 +96,21 @@ export function resumoCarrinho(itens: Itens, produtos: Map<number, ResumoProduto
 export function BarraCarrinho() {
   const { itens, produtos, pronto } = useCarrinho();
   const caminho = usePathname();
+  const [adicionar, setAdicionar] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const c = sessionStorage.getItem("pg-adicionar-ao-pedido");
+      setAdicionar(c && /^PG-[A-Z0-9]{6}$/.test(c) ? c : null);
+    } catch {}
+  }, [caminho]);
   if (!pronto || caminho.startsWith("/pedido") || caminho.startsWith("/produto")) return null;
   const { qtd, total, pesado } = resumoCarrinho(itens, produtos);
   if (qtd === 0) return null;
   return (
-    <Link href="/pedido" className="barra-carrinho">
+    <Link href={adicionar ? `/pedido?adicionar=${adicionar}` : "/pedido"} className="barra-carrinho">
       <span style={{ display: "flex", alignItems: "center" }}>
-        <span className="q">{qtd}</span>Revisar pedido
+        <span className="q">{qtd}</span>
+        {adicionar ? `Acrescentar ao ${adicionar}` : "Revisar pedido"}
       </span>
       <span className="num">
         {pesado ? "aprox. " : ""}

@@ -4,7 +4,7 @@
  *   ou a página "sem conexão".
  * - Painel (/admin), ações e qualquer envio (POST) nunca passam pelo cache.
  */
-const VERSAO = "pg-v1";
+const VERSAO = "pg-v2";
 const FIXOS = `${VERSAO}-fixos`;
 const PAGINAS = `${VERSAO}-paginas`;
 const OFFLINE = "/offline";
@@ -27,6 +27,8 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // Em desenvolvimento (localhost) nada é guardado: o worker existe só para os avisos.
+  if (self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1") return;
   if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api") || req.headers.get("next-action")) return;
 
   const fixo = /^\/(fonts|marca|icones|produtos)\//.test(url.pathname) || url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/_next/image");
@@ -53,4 +55,50 @@ self.addEventListener("fetch", (e) => {
         .catch(async () => (await caches.match(req)) || (await caches.match(OFFLINE))),
     );
   }
+});
+
+/* ---------- Avisos no celular (Web Push) ---------- */
+self.addEventListener("push", (e) => {
+  let d = {};
+  try {
+    d = e.data ? e.data.json() : {};
+  } catch {
+    d = { titulo: "Prime Grill", corpo: e.data ? e.data.text() : "" };
+  }
+  const titulo = d.titulo || "Prime Grill Paiva";
+  e.waitUntil(
+    Promise.all([
+      self.registration.showNotification(titulo, {
+        body: d.corpo || "",
+        icon: "/icones/icone-192.png",
+        badge: "/icones/icone-192.png",
+        tag: d.tag,
+        renotify: !!d.tag,
+        vibrate: [120, 60, 120],
+        data: { url: d.url || "/" },
+      }),
+      self.navigator && "setAppBadge" in self.navigator ? self.navigator.setAppBadge(1).catch(() => {}) : Promise.resolve(),
+    ]),
+  );
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const destino = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin).href;
+  e.waitUntil(
+    (async () => {
+      if (self.navigator && "clearAppBadge" in self.navigator) self.navigator.clearAppBadge().catch(() => {});
+      const abertas = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of abertas) {
+        if (c.url === destino && "focus" in c) return c.focus();
+      }
+      for (const c of abertas) {
+        if ("navigate" in c) {
+          await c.navigate(destino);
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(destino);
+    })(),
+  );
 });

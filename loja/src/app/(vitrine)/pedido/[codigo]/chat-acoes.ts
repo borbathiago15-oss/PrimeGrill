@@ -2,7 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import { gravarMensagem, lerMensagens, type MensagemChat } from "@/lib/chat";
+import { gravarDoFormulario, lerMensagens, type MensagemChat } from "@/lib/chat";
 
 async function pedidoPorCodigo(codigo: string) {
   if (!/^PG-[A-Z0-9]{6}$/.test(codigo)) return null;
@@ -17,9 +17,9 @@ export async function lerChatCliente(codigo: string, depoisDe: number): Promise<
   return lerMensagens(p.id, Number(depoisDe) || 0, false);
 }
 
-export async function enviarChatCliente(codigo: string, texto: string): Promise<{ erro?: string }> {
+export async function enviarChatCliente(codigo: string, form: FormData): Promise<{ erro?: string }> {
   const p = await pedidoPorCodigo(codigo);
   if (!p) return { erro: "Pedido não encontrado." };
   if (p.status === "CANCELADO") return { erro: "Este pedido foi cancelado. Fale com a loja pelo WhatsApp." };
-  return gravarMensagem(p.id, "CLIENTE", String(texto ?? ""), null);
+  return gravarDoFormulario(p.id, "CLIENTE", form, null);
 }

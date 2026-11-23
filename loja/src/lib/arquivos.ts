@@ -13,6 +13,35 @@ export function tipoImagem(b: Uint8Array): "jpg" | "png" | "webp" | null {
   return null;
 }
 
+/** PDF começa com "%PDF-". */
+export function ehPdf(b: Uint8Array) {
+  return b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46 && b[4] === 0x2d;
+}
+
+/** Anexo do chat do pedido: foto (JPG/PNG/WebP) ou PDF, até 5 MB, gravado com nome aleatório. */
+export async function salvarAnexo(arquivo: File): Promise<{ ok: true; url: string; tipo: "imagem" | "pdf"; nome: string } | { ok: false; erro: string }> {
+  if (arquivo.size === 0) return { ok: false, erro: "Arquivo vazio." };
+  if (arquivo.size > MAX_BYTES) return { ok: false, erro: "Arquivo acima de 5 MB." };
+  const bytes = new Uint8Array(await arquivo.arrayBuffer());
+  const img = tipoImagem(bytes);
+  const pdf = !img && ehPdf(bytes);
+  if (!img && !pdf) return { ok: false, erro: "Envie uma foto (JPG, PNG, WebP) ou um PDF." };
+  const ext = img ?? "pdf";
+  const contentType = img ? `image/${img === "jpg" ? "jpeg" : img}` : "application/pdf";
+  const nome = `chat/${randomUUID()}.${ext}`;
+  const original = (arquivo.name || `anexo.${ext}`).replace(/[^\w.\- ]+/g, "").slice(0, 80) || `anexo.${ext}`;
+  if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) {
+    const { put } = await import("@vercel/blob");
+    const r = await put(nome, Buffer.from(bytes), { access: "public", contentType });
+    return { ok: true, url: r.url, tipo: img ? "imagem" : "pdf", nome: original };
+  }
+  if (process.env.NODE_ENV === "production") return { ok: false, erro: "Armazenamento de arquivos não configurado." };
+  const destino = path.join(process.cwd(), "public", "uploads", nome);
+  await mkdir(path.dirname(destino), { recursive: true });
+  await writeFile(destino, bytes);
+  return { ok: true, url: `/uploads/${nome}`, tipo: img ? "imagem" : "pdf", nome: original };
+}
+
 export async function salvarFoto(arquivo: File, pasta: "produtos" | "pix" = "produtos"): Promise<{ ok: true; url: string } | { ok: false; erro: string }> {
   if (arquivo.size === 0) return { ok: false, erro: "Arquivo vazio." };
   if (arquivo.size > MAX_BYTES) return { ok: false, erro: "Foto acima de 5 MB." };

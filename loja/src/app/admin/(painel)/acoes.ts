@@ -39,6 +39,10 @@ export async function mudarStatus(form: FormData) {
     await tx.update(pedidos).set({ status, atualizadoEm: new Date() }).where(eq(pedidos.id, id));
     await tx.insert(pedidoEventos).values({ pedidoId: id, status, nota, autor });
   });
+  if (status === "CANCELADO") {
+    const { avisarCliente } = await import("@/lib/push");
+    avisarCliente(id, (c) => ({ titulo: "Pedido cancelado", corpo: `${c}: fale com a loja se tiver dúvidas.` }));
+  }
   revalidatePath(`/admin/pedidos/${id}`);
   revalidatePath("/", "layout");
 }

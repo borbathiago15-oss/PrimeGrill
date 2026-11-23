@@ -128,5 +128,9 @@ export async function registrarPedido(d: DadosPedido, o: OpcoesPedido): Promise<
     return p.id;
   });
   if (typeof r === "string") return { ok: false, erro: `${r} acabou de esgotar. Ajuste os itens.` };
+  if (o.origem === "LOJA_ONLINE") {
+    const { avisarLoja } = await import("@/lib/push");
+    avisarLoja(r, (x) => ({ titulo: `Novo pedido ${x.codigo}`, corpo: `${x.cliente} · ${d.modo === "ENTREGA" ? "entrega" : "retirada"}. Toque para aceitar.` }));
+  }
   return { ok: true, codigo, id: r };
 }

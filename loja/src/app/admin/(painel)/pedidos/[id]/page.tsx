@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { mudarStatus } from "../../acoes";
 import { CalculadoraPesagem } from "./calculadora";
 import { ProximoPasso } from "./proximo-passo";
+import { AdicionarItens } from "./adicionar";
+import { aceitaAdicionar } from "@/lib/adicionar-itens";
+import { comEstoqueReal } from "@/lib/estoque";
+import { asc } from "drizzle-orm";
 import { ChatPedido } from "@/components/chat";
 import { enviarChatLoja, lerChatLoja } from "./chat-acoes";
 import { AtualizarSozinho } from "@/components/copiar";
@@ -31,6 +35,13 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
   const destino = [p.endereco && `${p.endereco}, ${p.numero}`, p.bairro, p.cidade, p.cep].filter(Boolean).join(", ");
   const origem = config.entrega.lat !== null ? `${config.entrega.lat},${config.entrega.lng}` : config.entrega.endereco;
   const link = await linkDoPedido(p.codigo);
+  const pendentes = itens.reduce((s, i) => s + Math.max(0, i.quantidade - i.separados), 0);
+  const podeAdicionar = aceitaAdicionar(p);
+  const catalogo = podeAdicionar
+    ? (await comEstoqueReal(await db(), await (await db()).select().from(schema.produtos).orderBy(asc(schema.produtos.nome))))
+        .filter((x) => x.ativo && x.disponivel)
+        .map((x) => ({ id: x.id, nome: x.nome + (x.pesoNominal ? ` ${x.pesoNominal}` : ""), tipoVenda: x.tipoVenda, precoCentavos: x.precoCentavos, estoque: x.controlaEstoque ? (x.quantidadeDisponivel ?? 0) : null }))
+    : [];
   const eu = await usuarioAtual();
   const pix = p.totalFinalCentavos !== null && p.formaPagamento === "PIX" ? await pixDoPedido(config.pagamento, p.totalFinalCentavos, p.codigo, { pixCodigo: p.pixCodigo, pixQrUrl: p.pixQrUrl }) : null;
   const rota = p.modo === "ENTREGA" ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}` : null;
@@ -50,7 +61,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
       </div>
       <AtualizarSozinho />
       <div className="cont">
-        <ProximoPasso p={p} celular={celular} link={link} pix={pix?.codigoPix ?? null} pixOrigem={pix?.origem ?? null} pagamento={config.pagamento} />
+        <ProximoPasso p={p} pendentes={pendentes} celular={celular} link={link} pix={pix?.codigoPix ?? null} pixOrigem={pix?.origem ?? null} pagamento={config.pagamento} />
       </div>
       <div className="cont det" style={{ paddingTop: 0 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -103,6 +114,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               </dd>
             </dl>
           </div>
+          {podeAdicionar && <AdicionarItens pedidoId={p.id} produtos={catalogo} />}
           {p.status !== "CANCELADO" && p.status !== "NOVO" && (
             <CalculadoraPesagem
               linkCliente={link}
@@ -114,7 +126,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               celularCliente={celular}
               freteCentavos={p.freteCentavos}
               freteACombinar={p.freteACombinar}
-              itens={itens.map((i) => ({ id: i.id, nome: i.nome, tipoVenda: i.tipoVenda, precoCentavos: i.precoCentavos, quantidade: i.quantidade }))}
+              itens={itens.map((i) => ({ id: i.id, nome: i.nome, tipoVenda: i.tipoVenda, precoCentavos: i.precoCentavos, quantidade: i.quantidade, separados: i.separados }))}
             />
           )}
         </div>

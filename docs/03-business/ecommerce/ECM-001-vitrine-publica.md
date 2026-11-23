@@ -98,3 +98,18 @@ Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o aten
 - **App instalável (PWA):** a loja pode ser instalada na tela inicial (Android: botão "Instalar"; iPhone: Compartilhar → Adicionar à Tela de Início). Abre em tela cheia, com ícone da marca e atalho "Fazer pedido". Sem internet, mostra a última versão do cardápio ou a página "Sem conexão"; preços e estoque sempre vêm da rede quando há conexão. O painel não passa pelo cache.
 - **Meus pedidos:** o aparelho guarda os últimos 5 pedidos e mostra atalhos no topo do cardápio.
 - Próximo passo possível: notificação no celular (push) quando a loja responder ou o valor final ficar pronto.
+
+## 8.5 Acrescentar itens, anexos no chat e avisos no celular
+
+- **Acrescentar itens a um pedido aberto** (até o pagamento ser conferido):
+  - *Cliente:* no link do pedido, "+ Adicionar mais itens" abre o cardápio no modo "acrescentar ao pedido PG-…"; o carrinho envia os itens direto para o pedido.
+  - *Loja:* na tela do pedido, "+ Adicionar itens a este pedido" (ex.: o cliente pediu mais pelo chat).
+  - Se o pedido já tinha sido pesado, ele volta para *Em separação*: as peças já pesadas ficam travadas e só o que é novo é pesado/baixado (`pedido_itens.separados`). O total final soma tudo; o Pix/link de pagamento antigo é descartado. Estoque reservado = unidades ainda não separadas de pedidos abertos.
+  - Pedido já pago não aceita acréscimo (faz-se um pedido novo).
+- **Chat com anexos:** cliente e loja podem enviar foto (JPG/PNG/WebP) ou PDF de até 5 MB — ex.: folder, foto do corte, comprovante. Tipo conferido pelos bytes do arquivo; nome aleatório no armazenamento.
+- **Avisos no celular (Web Push):**
+  - *Cliente* ativa "Receber avisos deste pedido" no link: pedido aceito, valor final pronto, itens acrescentados pela loja, Pix/link de pagamento pronto, pagamento confirmado, entregue/retirado, cancelado e respostas da loja no chat.
+  - *Equipe* ativa "Ativar avisos neste aparelho" no menu do painel: novo pedido, mensagem do cliente, cliente confirmou/escolheu pagamento, avisou que pagou, tirou ou acrescentou itens.
+  - Android e computador: funciona no navegador ou no app instalado. iPhone (iOS 16.4+): só com o app instalado na Tela de Início.
+  - Chaves VAPID: variáveis `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` se existirem; senão o sistema gera uma vez e guarda no banco (`chaves_sistema`).
+  - Com o app aberto em segundo plano, o título da aba mostra "💬 Nova mensagem".

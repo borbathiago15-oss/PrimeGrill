@@ -152,6 +152,8 @@ export const pedidoItens = pgTable("pedido_itens", {
   pesoMedioGramas: integer("peso_medio_gramas"),
   /** Estimado (PECA) ou exato (PACOTE). Nulo quando a peça não tem peso médio cadastrado. */
   valorCentavos: integer("valor_centavos"),
+  /** Quantas peças/unidades deste item já foram separadas e baixadas do estoque (itens acrescentados depois ficam pendentes). */
+  separados: integer("separados").notNull().default(0),
 });
 
 export const pedidoEventos = pgTable("pedido_eventos", {
@@ -351,8 +353,37 @@ export const pedidoMensagens = pgTable(
     /** Para mensagens da loja: e-mail de quem respondeu (auditoria). */
     autor: text("autor"),
     texto: text("texto").notNull(),
+    /** Anexo opcional: foto ou PDF (ex.: folder, foto do corte, comprovante). */
+    anexoUrl: text("anexo_url"),
+    anexoTipo: text("anexo_tipo").$type<"imagem" | "pdf">(),
+    anexoNome: text("anexo_nome"),
     lidaPelaLoja: boolean("lida_pela_loja").notNull().default(false),
     criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("pedido_mensagens_pedido_idx").on(t.pedidoId)],
 );
+
+/* ---------------- Notificações no celular (Web Push) ---------------- */
+export const pushInscricoes = pgTable(
+  "push_inscricoes",
+  {
+    id: serial("id").primaryKey(),
+    /** Endereço do serviço de push do navegador (único por aparelho/navegador). */
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    /** CLIENTE: avisos de um pedido. LOJA: avisos para a equipe (novo pedido, mensagem, pagamento). */
+    publico: text("publico").$type<"CLIENTE" | "LOJA">().notNull(),
+    pedidoId: integer("pedido_id").references(() => pedidos.id, { onDelete: "cascade" }),
+    usuario: text("usuario"),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("push_endpoint_pedido_uq").on(t.endpoint, t.publico, t.pedidoId), index("push_pedido_idx").on(t.pedidoId)],
+);
+
+/** Chaves geradas pelo próprio sistema (ex.: par VAPID do push), quando não vierem das variáveis de ambiente. */
+export const chavesSistema = pgTable("chaves_sistema", {
+  nome: text("nome").primaryKey(),
+  valor: text("valor").notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});

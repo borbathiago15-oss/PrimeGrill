@@ -1,3 +1,4 @@
+import { FaixaModoAdicionar } from "@/components/modo-adicionar";
 import { MeusPedidos } from "@/components/app-instalavel";
 import Link from "next/link";
 import { Preco, textoAproximado, textoDisponivel } from "@/components/preco";
@@ -38,6 +39,7 @@ export default async function Cardapio() {
               <span>· Entrega e retirada</span>
             </div>
             <MeusPedidos />
+            <FaixaModoAdicionar />
           </div>
         </div>
       </header>

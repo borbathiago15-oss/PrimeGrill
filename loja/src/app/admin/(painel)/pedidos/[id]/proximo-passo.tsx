@@ -29,7 +29,7 @@ function wa(celular: string, texto: string) {
  * Fluxo guiado do pedido: mostra só o que o atendente precisa fazer agora.
  * NOVO → aceitar · EM_SEPARACAO → pesar · AGUARDANDO_CLIENTE → mandar o link · CONFIRMADO → cobrar e conferir · entregar.
  */
-export function ProximoPasso({ p, celular, link, pix, pixOrigem, pagamento }: { p: Pedido; celular: string; link: string; pix: string | null; pixOrigem: "maquininha" | "foto" | "chave" | null; pagamento: ConfigPagamento }) {
+export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, pagamento }: { p: Pedido; pendentes: number; celular: string; link: string; pix: string | null; pixOrigem: "maquininha" | "foto" | "chave" | null; pagamento: ConfigPagamento }) {
   const nome = p.clienteNome.split(" ")[0];
   const total = p.totalFinalCentavos !== null ? formatarReais(p.totalFinalCentavos) : "";
   const pago = p.pagamentoStatus === "PAGO";
@@ -49,6 +49,14 @@ export function ProximoPasso({ p, celular, link, pix, pixOrigem, pagamento }: { 
           <input type="hidden" name="pedidoId" value={p.id} />
           <button className="btn btn-pri btn-grande">Aceitar e começar a separar</button>
         </form>
+      </>
+    );
+  } else if (p.status === "EM_SEPARACAO" && p.alteracaoCliente && pendentes > 0) {
+    titulo = "Pedido com itens novos: separe e pese";
+    corpo = (
+      <>
+        <p className="msg-ok" style={{ background: "#FBF0DE", borderColor: "#E8C98A", color: "var(--texto)" }}>{p.alteracaoCliente}</p>
+        <p>As peças que já estavam pesadas continuam como estão. Pese só as novas em “Separação e pesagem”, logo abaixo: o sistema soma tudo e o pedido volta para o cliente confirmar o novo total.</p>
       </>
     );
   } else if (p.status === "EM_SEPARACAO" && p.alteracaoCliente) {

@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { confirmarSeparacao, type EstadoSeparacao } from "./acoes";
 import { formatarKg, formatarReais, formatarValor, kgParaGramas, reaisParaCentavos, valorPorPeso } from "@/modules/dinheiro";
 
-type Item = { id: number; nome: string; tipoVenda: "PECA" | "PACOTE"; precoCentavos: number; quantidade: number };
+type Item = { id: number; nome: string; tipoVenda: "PECA" | "PACOTE"; precoCentavos: number; quantidade: number; separados: number };
 type Pesagem = { itemId: number; peca: number; gramas: number; valorCentavos: number };
 
 /**
@@ -62,14 +62,17 @@ export function CalculadoraPesagem(props: {
   if (freteACombinar && !baixaFeita && reaisParaCentavos(freteTxt) === null) completo = false;
   const final = total + frete;
   const msg = [`*Pedido ${codigo} ${pecas.length ? "pesado" : "separado"}* — Prime Grill Paiva`, "", ...linhas, "", `*Total final: ${formatarReais(final)}*`, "", "Confirme e escolha como pagar (Pix, cartão ou na entrega/retirada) neste link:", linkCliente].join("\n");
-  const pronto = baixaFeita || estado.ok;
+  // Peças já pesadas ficam travadas; só as pendentes (itens acrescentados) pedem peso.
+  const pendentes = itens.some((i) => i.quantidade > i.separados);
+  const pronto = !pendentes || !!estado.ok;
+  const travada = (item: Item, n: number) => n < item.separados || !!estado.ok;
 
   return (
     <form action={acao} className="cartao">
       <input type="hidden" name="pedidoId" value={pedidoId} />
       <div className="cartao-h">
         <h2>Separação e pesagem</h2>
-        {baixaFeita ? <span className="chip ok">Estoque baixado</span> : <span className="rotulo">{pecas.length ? "peso real de cada peça" : "confira e separe os pacotes"}</span>}
+        {baixaFeita && !pendentes ? <span className="chip ok">Estoque baixado</span> : baixaFeita ? <span className="chip at">Itens novos a pesar</span> : <span className="rotulo">{pecas.length ? "peso real de cada peça" : "confira e separe os pacotes"}</span>}
       </div>
       {estado.erro && <p className="msg-erro" style={{ margin: "12px 18px 0" }}>{estado.erro}</p>}
       {estado.ok && <p className="msg-ok" style={{ margin: "12px 18px 0" }}>{estado.ok}</p>}
@@ -83,7 +86,7 @@ export function CalculadoraPesagem(props: {
                   {item.nome}
                   {item.quantidade > 1 ? ` · peça ${n + 1}` : ""} (R$ {formatarValor(item.precoCentavos)}/kg)
                 </label>
-                <input id={chave} name={`peso-${chave}`} inputMode="decimal" placeholder="Peso em kg, ex.: 1,385" value={pesos[chave] ?? ""} disabled={!!pronto} onChange={(e) => setPesos({ ...pesos, [chave]: e.target.value })} />
+                <input id={chave} name={`peso-${chave}`} inputMode="decimal" placeholder="Peso em kg, ex.: 1,385" value={pesos[chave] ?? ""} disabled={travada(item, n)} onChange={(e) => setPesos({ ...pesos, [chave]: e.target.value })} />
                 <small className="num">{g ? `= ${formatarReais(valorPorPeso(g, item.precoCentavos))}` : "informe o peso da balança"}</small>
               </div>
             );
@@ -105,7 +108,7 @@ export function CalculadoraPesagem(props: {
         <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {!pronto && (
             <button className="btn btn-pri" disabled={!completo || enviando}>
-              {enviando ? "Registrando…" : "Confirmar separação e dar baixa"}
+              {enviando ? "Registrando…" : baixaFeita ? "Confirmar itens novos e dar baixa" : "Confirmar separação e dar baixa"}
             </button>
           )}
           {pronto && completo && podeEnviar && (

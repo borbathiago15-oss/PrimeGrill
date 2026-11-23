@@ -4,6 +4,7 @@ import { Menu } from "./menu";
 import { exigirUsuario } from "@/lib/admin";
 import { ROTULO_PAPEL } from "@/modules/usuarios/permissoes";
 import { FormTrocarSenha } from "./usuarios/forms";
+import { AtivarAvisos } from "@/components/ativar-avisos";
 import { COOKIE } from "@/lib/sessao";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export default async function LayoutPainel({ children }: { children: React.React
           <img src="/marca/logo-preta.png" alt="Prime Grill Paiva" style={{ height: 40 }} />
         </div>
         <Menu papel={eu.papel} />
+        <AtivarAvisos publico="LOJA" tema="escuro" />
         <a href="/admin/conta" className="quem">
           <b>{eu.nome}</b>
           <small>{ROTULO_PAPEL[eu.papel].texto} · minha conta</small>

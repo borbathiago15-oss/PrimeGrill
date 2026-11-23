@@ -95,3 +95,4 @@
 | 2026-11-21 | Fluxo guiado do pedido com link do cliente e Pix (ECM-001 §8.2–8.3); usuários e papéis (USR-001); pedido do WhatsApp no painel; alteração do pedido pelo cliente |
 | 2026-11-21 | STU-002 implementado (folder automático: encarte, feed e story; PDF, JPEG, PNG; versões e desatualização); fontes servidas pelo próprio site |
 | 2026-11-21 | Chat do pedido (cliente ↔ atendente), app instalável (PWA) e "Meus pedidos" (ECM-001 §8.4) |
+| 2026-11-23 | Acrescentar itens a pedido aberto (cliente e loja), anexos no chat e avisos no celular por Web Push (ECM-001 §8.5) |
