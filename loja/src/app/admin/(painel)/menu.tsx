@@ -9,6 +9,7 @@ import { pode, type Permissao } from "@/modules/usuarios/permissoes";
 const ITENS: { href: string; texto: string; exato?: boolean; perm: Permissao }[] = [
   { href: "/admin", texto: "Pedidos", exato: true, perm: "pedidos" },
   { href: "/admin/produtos", texto: "Produtos e preços", perm: "produtosDisponibilidade" },
+  { href: "/admin/clientes", texto: "Clientes", perm: "clientesVer" },
   { href: "/admin/estoque", texto: "Estoque", perm: "estoqueVer" },
   { href: "/admin/notas", texto: "Notas de entrada", perm: "notas" },
   { href: "/admin/configuracoes", texto: "Loja e entregas", perm: "lojaEntregas" },

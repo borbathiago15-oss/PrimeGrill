@@ -10,6 +10,10 @@ describe("Permissões por papel", () => {
     expect(pode("ATENDENTE", "pagamento")).toBe(false);
     expect(pode("ATENDENTE", "usuarios")).toBe(false);
     expect(pode("ATENDENTE", "pedidosAjusteManual")).toBe(false);
+    expect(pode("ATENDENTE", "clientesVer")).toBe(false);
+    expect(pode("GERENTE", "clientesVer")).toBe(true);
+    expect(pode("GERENTE", "clientesExcluir")).toBe(false);
+    expect(pode("DONO", "clientesExcluir")).toBe(true);
   });
   it("gerente opera tudo menos usuários e Pix; dono pode tudo", () => {
     expect(pode("GERENTE", "notas")).toBe(true);

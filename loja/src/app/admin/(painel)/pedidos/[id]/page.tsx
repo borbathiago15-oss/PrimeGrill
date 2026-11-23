@@ -44,7 +44,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
     : [];
   const eu = await usuarioAtual();
   const pix = p.totalFinalCentavos !== null && p.formaPagamento === "PIX" ? await pixDoPedido(config.pagamento, p.totalFinalCentavos, p.codigo, { pixCodigo: p.pixCodigo, pixQrUrl: p.pixQrUrl }) : null;
-  const rota = p.modo === "ENTREGA" ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}` : null;
+  const rota = p.modo === "ENTREGA" && !p.anonimizadoEm ? `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${encodeURIComponent(destino)}` : null;
 
   return (
     <>
@@ -144,9 +144,13 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
           <div className="cartao">
             <div className="cartao-h">
               <h2>Cliente</h2>
-              <a className="btn btn-pq" href={`https://wa.me/${celular}`} target="_blank" rel="noopener noreferrer">
-                WhatsApp ↗
-              </a>
+              {p.anonimizadoEm ? (
+                <span className="chip ne">Dados apagados (LGPD)</span>
+              ) : (
+                <a className="btn btn-pq" href={`https://wa.me/${celular}`} target="_blank" rel="noopener noreferrer">
+                  WhatsApp ↗
+                </a>
+              )}
             </div>
             <dl className="kv">
               <dt>Nome</dt>
@@ -155,7 +159,11 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
               <dd>{p.clienteCelular}</dd>
               <dt>Recebimento</dt>
               <dd>
-                {p.modo === "ENTREGA"
+                {p.anonimizadoEm
+                  ? p.modo === "ENTREGA"
+                    ? "Entrega (endereço apagado — LGPD)"
+                    : "Retirada na loja"
+                  : p.modo === "ENTREGA"
                   ? `${p.endereco}, ${p.numero}${p.complemento ? `, ${p.complemento}` : ""} — ${p.bairro}${p.cidade ? `, ${p.cidade}` : ""}${p.cep ? ` · CEP ${p.cep}` : ""}`
                   : "Retirada na loja"}
                 {rota && (

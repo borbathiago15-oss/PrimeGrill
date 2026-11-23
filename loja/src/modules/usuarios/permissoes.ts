@@ -18,6 +18,10 @@ export const PERMISSOES = {
   lojaEntregas: ["DONO", "GERENTE"],
   pagamento: ["DONO"],
   usuarios: ["DONO"],
+  /** Lista de clientes e histórico de pedidos. */
+  clientesVer: ["DONO", "GERENTE"],
+  /** LGPD: apagar os dados pessoais de um cliente (só o dono). */
+  clientesExcluir: ["DONO"],
   /** Studio: folder automático (STU-002). */
   folder: ["DONO", "GERENTE"],
 } as const satisfies Record<string, readonly Papel[]>;

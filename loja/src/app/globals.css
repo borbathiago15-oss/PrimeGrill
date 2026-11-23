@@ -402,3 +402,6 @@ tr.link:hover td { background: #FCF8F0; }
 .avisos.escuro.ativo span { color: var(--ok-esc); }
 .lateral .avisos { margin-top: auto; padding: 0 4px 8px; font-size: 12.5px; }
 .lateral .avisos + .quem { margin-top: 0; }
+.lgpd { border: 2px solid var(--erro); }
+.lgpd .f { display: flex; flex-direction: column; gap: 6px; max-width: 420px; }
+.lgpd .f input { height: 40px; padding: 0 12px; border: 1px solid var(--borda); border-radius: 6px; font: inherit; }

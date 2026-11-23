@@ -133,6 +133,8 @@ export const pedidos = pgTable(
     totalEstimadoCentavos: integer("total_estimado_centavos").notNull(),
     temItemPesado: boolean("tem_item_pesado").notNull(),
     observacao: text("observacao").notNull().default(""),
+    /** LGPD: dados pessoais apagados a pedido do titular; valores e itens ficam para a contabilidade. */
+    anonimizadoEm: timestamp("anonimizado_em", { withTimezone: true }),
     consentimentoLgpd: boolean("consentimento_lgpd").notNull(),
     optinWhatsapp: boolean("optin_whatsapp").notNull(),
     criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
@@ -385,5 +387,18 @@ export const pushInscricoes = pgTable(
 export const chavesSistema = pgTable("chaves_sistema", {
   nome: text("nome").primaryKey(),
   valor: text("valor").notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/* ---------------- LGPD: registro das exclusões feitas a pedido do titular ---------------- */
+export const lgpdExclusoes = pgTable("lgpd_exclusoes", {
+  id: serial("id").primaryKey(),
+  /** Só os 4 últimos dígitos: prova que o pedido foi atendido sem guardar o dado apagado. */
+  celularFinal: text("celular_final").notNull(),
+  pedidos: integer("pedidos").notNull(),
+  mensagens: integer("mensagens").notNull(),
+  arquivos: integer("arquivos").notNull(),
+  motivo: text("motivo").notNull(),
+  autor: text("autor").notNull(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -103,7 +103,7 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                         </>
                       )}
                     </td>
-                    <td>{p.modo === "ENTREGA" ? `Entrega · ${p.bairro}` : "Retirada"}</td>
+                    <td>{p.modo === "ENTREGA" ? `Entrega${p.bairro ? ` · ${p.bairro}` : ""}` : "Retirada"}</td>
                     <td className="n">
                       {p.totalFinalCentavos !== null ? (
                         <b>{formatarReais(p.totalFinalCentavos)}</b>
