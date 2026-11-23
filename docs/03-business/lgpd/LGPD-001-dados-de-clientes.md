@@ -36,8 +36,20 @@ Regras:
 
 Pelo chat do pedido, pelo WhatsApp da loja ou pessoalmente. A loja confirma que o pedido vem do próprio titular (ex.: mensagem do mesmo número) antes de apagar, e responde confirmando a exclusão.
 
-## 4. Pendências
+## 4. Política de privacidade
 
-- Política de privacidade publicada na loja (texto para o cliente) com o canal de contato do encarregado.
+Página pública **/privacidade** (link no rodapé do cardápio, no aceite do checkout, no cadastro de ofertas e no link do pedido). O texto descreve o que o sistema realmente faz (dados, finalidades e bases legais, compartilhamento, retenção, direitos, segurança). Razão social, CNPJ (com conferência dos dígitos), encarregado e e-mail de privacidade são preenchidos pelo Dono em **Loja e entregas → Privacidade (LGPD)**; o que estiver em branco não aparece. Ao mudar o que o sistema coleta ou com quem compartilha, atualizar o texto e a data (`ATUALIZADA_EM`).
+
+## 5. Promoções e folder (marketing)
+
+- Base legal: **consentimento** (art. 7º, I), separado do aceite do pedido.
+- Onde o cliente aceita: caixa própria e **desmarcada** no checkout; cadastro "Receba as ofertas da semana" no cardápio (caixa obrigatória); ou registrado pela loja no painel quando o cliente pede no balcão/WhatsApp (fica gravado quem anotou).
+- Cadastro: `inscritos_promocoes` — nome, celular, origem, data do aceite, quem registrou, data de saída e um código aleatório para o link de saída.
+- Envio: painel → **Promoções** → campanha (mensagem com `{nome}` + folder opcional). Cada mensagem leva o link público do folder (`/ofertas/<id>`), o cardápio e **"Não quer mais receber?" (`/sair/<código>`)**. Hoje o envio é um toque por cliente pelo WhatsApp da loja, com controle de quem já recebeu; com a API oficial do WhatsApp Business pode virar automático.
+- Saída: pelo link (um toque de confirmação) ou pela loja ("Tirar da lista" quando o cliente responde SAIR). Quem saiu não aparece mais nas campanhas.
+- Exclusão LGPD do cliente também apaga o cadastro de promoções daquele celular.
+
+## 6. Pendências
+
 - Prazo de retenção definido com o contador para pedidos antigos (ex.: anonimizar automaticamente após X anos).
 - Exportação dos dados do titular (direito de acesso/portabilidade, art. 18, II e V), se for pedido.

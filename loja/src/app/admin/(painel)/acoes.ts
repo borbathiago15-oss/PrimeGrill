@@ -136,6 +136,7 @@ export async function salvarConfig(_: EstadoForm, form: FormData): Promise<Estad
   const whatsapp = String(form.get("whatsapp") ?? "").replace(/\D/g, "");
   if (!/^55\d{10,11}$/.test(whatsapp)) return { erro: "WhatsApp deve ter DDI e DDD, ex.: 5581998990694." };
   const dados: ConfigLoja = {
+    ...atual,
     horarios,
     pausada: form.get("pausada") === "on",
     mensagemPausa: String(form.get("mensagemPausa") ?? "").trim().slice(0, 80),
@@ -144,6 +145,7 @@ export async function salvarConfig(_: EstadoForm, form: FormData): Promise<Estad
     enderecoRetirada: String(form.get("enderecoRetirada") ?? "").trim().slice(0, 120),
     entrega: atual.entrega,
     pagamento: atual.pagamento,
+    privacidade: atual.privacidade,
   };
   const banco = await db();
   await banco
@@ -226,4 +228,23 @@ export async function salvarPagamento(_: EstadoForm, form: FormData): Promise<Es
   await banco.insert(configuracoes).values({ id: 1, dados }).onConflictDoUpdate({ target: configuracoes.id, set: { dados, atualizadoEm: new Date() } });
   revalidatePath("/admin/configuracoes");
   return { ok: "Pagamento salvo." };
+}
+
+/** Dados da empresa e do encarregado (LGPD) que aparecem na política de privacidade. Só o dono. */
+export async function salvarPrivacidade(_: EstadoForm, form: FormData): Promise<EstadoForm> {
+  await exigirPermissao("pagamento");
+  const { cnpjValido } = await import("@/modules/loja/cnpj");
+  const atual = await configLoja();
+  const razaoSocial = String(form.get("razaoSocial") ?? "").trim().slice(0, 120);
+  const cnpj = String(form.get("cnpj") ?? "").replace(/\D/g, "");
+  const encarregado = String(form.get("encarregado") ?? "").trim().slice(0, 80);
+  const email = String(form.get("email") ?? "").trim().toLowerCase().slice(0, 120);
+  if (cnpj && !cnpjValido(cnpj)) return { erro: "CNPJ inválido: confira os números." };
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { erro: "E-mail inválido." };
+  const dados: ConfigLoja = { ...atual, privacidade: { razaoSocial, cnpj, encarregado, email } };
+  const banco = await db();
+  await banco.insert(configuracoes).values({ id: 1, dados }).onConflictDoUpdate({ target: configuracoes.id, set: { dados, atualizadoEm: new Date() } });
+  revalidatePath("/admin/configuracoes");
+  revalidatePath("/privacidade");
+  return { ok: "Dados da política de privacidade salvos." };
 }

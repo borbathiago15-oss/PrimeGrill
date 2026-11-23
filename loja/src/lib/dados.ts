@@ -3,7 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { CONFIG_PADRAO, PAGAMENTO_PADRAO } from "@/modules/loja/horario";
 import { comEstoqueReal } from "@/lib/estoque";
-import type { ConfigLoja, ConfigPagamento } from "@/db/schema";
+import type { ConfigLoja, ConfigPagamento, ConfigPrivacidade } from "@/db/schema";
 
 const { produtos, categorias, configuracoes } = schema;
 
@@ -39,9 +39,9 @@ export async function produtoPublico(slug: string): Promise<ProdutoVitrine | nul
   return { ...p, categoriaNome: r.c.nome, categoriaSlug: r.c.slug };
 }
 
-export async function configLoja(): Promise<ConfigLoja & { pagamento: ConfigPagamento }> {
+export async function configLoja(): Promise<ConfigLoja & { pagamento: ConfigPagamento; privacidade: ConfigPrivacidade }> {
   const d = await db();
   const [c] = await d.select().from(configuracoes).where(eq(configuracoes.id, 1));
   const dados = (c?.dados ?? {}) as Partial<ConfigLoja>;
-  return { ...CONFIG_PADRAO, ...dados, entrega: { ...CONFIG_PADRAO.entrega, ...(dados.entrega ?? {}) }, pagamento: { ...PAGAMENTO_PADRAO, ...(dados.pagamento ?? {}) } };
+  return { ...CONFIG_PADRAO, ...dados, entrega: { ...CONFIG_PADRAO.entrega, ...(dados.entrega ?? {}) }, pagamento: { ...PAGAMENTO_PADRAO, ...(dados.pagamento ?? {}) }, privacidade: { ...CONFIG_PADRAO.privacidade!, ...(dados.privacidade ?? {}) } };
 }

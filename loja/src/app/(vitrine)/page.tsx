@@ -1,3 +1,4 @@
+import { CadastroOfertas } from "@/components/cadastro-ofertas";
 import { FaixaModoAdicionar } from "@/components/modo-adicionar";
 import { MeusPedidos } from "@/components/app-instalavel";
 import Link from "next/link";
@@ -87,6 +88,7 @@ export default async function Cardapio() {
             </div>
           </section>
         ))}
+        <CadastroOfertas />
         <footer className="rodape-v">
           <span>
             <b>Prime Grill Paiva</b> · Cortes premium para momentos especiais
@@ -96,6 +98,9 @@ export default async function Cardapio() {
             {config.whatsapp2 ? ` · ${formatarCelular(config.whatsapp2.replace(/^55/, ""))}` : ""}
           </span>
           {config.instagram && <span>@{config.instagram}</span>}
+          <a href="/privacidade" style={{ textDecoration: "underline" }}>
+            Política de privacidade
+          </a>
         </footer>
       </main>
     </>

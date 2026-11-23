@@ -92,6 +92,13 @@
       "when": 1795440272527,
       "tag": "0012_lgpd",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795440967545,
+      "tag": "0013_promocoes",
+      "breakpoints": true
     }
   ]
 }

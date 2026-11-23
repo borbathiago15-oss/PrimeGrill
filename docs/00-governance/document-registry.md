@@ -97,3 +97,4 @@
 | 2026-11-21 | Chat do pedido (cliente ↔ atendente), app instalável (PWA) e "Meus pedidos" (ECM-001 §8.4) |
 | 2026-11-23 | Acrescentar itens a pedido aberto (cliente e loja), anexos no chat e avisos no celular por Web Push (ECM-001 §8.5) |
 | 2026-11-23 | LGPD-001: tela Clientes e exclusão de dados pessoais a pedido do titular (só Dono), com anonimização dos pedidos e registro da exclusão |
+| 2026-11-23 | Política de privacidade pública (/privacidade) e cadastro de promoções com consentimento, campanhas com folder e descadastro (LGPD-001 §4–5) |

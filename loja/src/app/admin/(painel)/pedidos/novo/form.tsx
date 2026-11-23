@@ -120,6 +120,9 @@ export function FormNovoPedido({ produtos }: { produtos: Produto[] }) {
           <label className="f-check cheio">
             <input type="checkbox" name="separar" defaultChecked /> Já aceitar e começar a separar
           </label>
+          <label className="f-check cheio">
+            <input type="checkbox" name="promocoes" /> O cliente aceitou receber promoções e o folder pelo WhatsApp (marque só se ele disse que sim)
+          </label>
         </div>
       </div>
 

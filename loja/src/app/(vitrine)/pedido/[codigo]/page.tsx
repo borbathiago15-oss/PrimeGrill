@@ -260,6 +260,9 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
       <Link href="/" className="btn-linha">
         Voltar ao cardápio
       </Link>
+      <a href="/privacidade" style={{ textAlign: "center", fontSize: 12.5, color: "#A99E90", textDecoration: "underline" }}>
+        Política de privacidade
+      </a>
     </div>
   );
 }

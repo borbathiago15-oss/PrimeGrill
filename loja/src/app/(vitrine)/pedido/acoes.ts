@@ -17,6 +17,7 @@ const entrada = z.object({
   observacao: z.string().trim().max(180).optional().default(""),
   consentimento: z.literal(true, { errorMap: () => ({ message: "É preciso aceitar o uso dos dados para o pedido." }) }),
   optin: z.boolean(),
+  promocoes: z.boolean().optional().default(false),
   site: z.string().max(0).optional(), // campo-isca contra robôs
 });
 
@@ -31,8 +32,14 @@ export async function criarPedido(dados: unknown): Promise<ResultadoPedido> {
   if (!celular) return { ok: false, erro: "Informe um celular com DDD, ex.: (81) 99999-9999." };
   if (d.modo === "ENTREGA" && (!d.endereco || !d.numero)) return { ok: false, erro: "Informe endereço e número para entrega." };
 
-  return registrarPedido(
+  const r = await registrarPedido(
     { ...d, celular },
     { origem: "LOJA_ONLINE", autor: "cliente", nota: "Pedido feito pela loja online", freteFlexivel: false },
   );
+  // Consentimento separado para promoções (LGPD): só grava se o cliente marcou.
+  if (r.ok && d.promocoes) {
+    const { registrarAceite } = await import("@/lib/promocoes");
+    await registrarAceite({ celular, nome: d.nome, origem: "CHECKOUT" });
+  }
+  return r;
 }

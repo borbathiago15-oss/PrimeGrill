@@ -76,7 +76,11 @@ export type ConfigLoja = {
   /** Contatos impressos no folder e no rodapé da loja. */
   whatsapp2?: string;
   instagram?: string;
+  /** Identificação da empresa e do encarregado (LGPD), mostrada na política de privacidade. */
+  privacidade?: ConfigPrivacidade;
 };
+
+export type ConfigPrivacidade = { razaoSocial: string; cnpj: string; encarregado: string; email: string };
 
 export type ConfigPagamento = {
   pixChave: string;
@@ -402,3 +406,46 @@ export const lgpdExclusoes = pgTable("lgpd_exclusoes", {
   autor: text("autor").notNull(),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/* ---------------- Promoções: cadastro de quem aceitou receber (consentimento LGPD) ---------------- */
+export const inscritosPromocoes = pgTable(
+  "inscritos_promocoes",
+  {
+    id: serial("id").primaryKey(),
+    /** Só dígitos, com DDD (ex.: 81999990000). */
+    celular: text("celular").notNull(),
+    nome: text("nome").notNull(),
+    /** Onde aceitou: no pedido (checkout), no cadastro do site ou informado pelo atendente. */
+    origem: text("origem").$type<"CHECKOUT" | "SITE" | "PAINEL">().notNull(),
+    aceitouEm: timestamp("aceitou_em", { withTimezone: true }).notNull().defaultNow(),
+    /** Quem registrou quando o aceite veio pelo balcão/WhatsApp. */
+    registradoPor: text("registrado_por"),
+    /** Descadastro: a pessoa pediu para não receber mais. */
+    revogadoEm: timestamp("revogado_em", { withTimezone: true }),
+    /** Chave do link "não quero mais receber" (aleatória, sem dado pessoal). */
+    token: text("token").notNull(),
+  },
+  (t) => [uniqueIndex("inscritos_celular_uq").on(t.celular), uniqueIndex("inscritos_token_uq").on(t.token)],
+);
+
+export const campanhas = pgTable("campanhas", {
+  id: serial("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  mensagem: text("mensagem").notNull(),
+  /** Folder (STU-002) anexado como link público. */
+  folderId: integer("folder_id").references(() => folders.id),
+  criadoPor: text("criado_por").notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const campanhaEnvios = pgTable(
+  "campanha_envios",
+  {
+    id: serial("id").primaryKey(),
+    campanhaId: integer("campanha_id").notNull().references(() => campanhas.id, { onDelete: "cascade" }),
+    inscritoId: integer("inscrito_id").notNull().references(() => inscritosPromocoes.id, { onDelete: "cascade" }),
+    enviadoEm: timestamp("enviado_em", { withTimezone: true }).notNull().defaultNow(),
+    autor: text("autor").notNull(),
+  },
+  (t) => [uniqueIndex("campanha_envio_uq").on(t.campanhaId, t.inscritoId)],
+);

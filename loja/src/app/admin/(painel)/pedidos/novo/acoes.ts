@@ -26,6 +26,7 @@ const Entrada = z.object({
   frete: z.string().trim().max(12),
   observacao: z.string().trim().max(180),
   separar: z.boolean(),
+  promocoes: z.boolean(),
 });
 
 /** Pedido que chegou pelo WhatsApp ou no balcão: o atendente lança e ele segue o mesmo fluxo da loja online. */
@@ -51,6 +52,7 @@ export async function criarPedidoPainel(_: EstadoNovo, form: FormData): Promise<
     frete: form.get("frete") ?? "",
     observacao: form.get("observacao") ?? "",
     separar: form.get("separar") === "on",
+    promocoes: form.get("promocoes") === "on",
   });
   if (!v.success) return { erro: v.error.issues[0]?.message ?? "Confira os dados." };
   const d = v.data;
@@ -74,6 +76,10 @@ export async function criarPedidoPainel(_: EstadoNovo, form: FormData): Promise<
     },
   );
   if (!r.ok) return { erro: r.erro };
+  if (d.promocoes) {
+    const { registrarAceite } = await import("@/lib/promocoes");
+    await registrarAceite({ celular, nome: d.nome, origem: "PAINEL", registradoPor: autor });
+  }
   if (d.separar) {
     const banco = await db();
     await banco.transaction(async (tx) => {

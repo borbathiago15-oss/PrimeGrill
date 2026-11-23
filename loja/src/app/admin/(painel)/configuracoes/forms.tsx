@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { salvarConfig, salvarEntrega, salvarPagamento, type EstadoForm } from "../acoes";
+import { salvarConfig, salvarEntrega, salvarPagamento, salvarPrivacidade, type EstadoForm } from "../acoes";
 import { formatarValor } from "@/modules/dinheiro";
 import type { ConfigEntrega } from "@/modules/entrega/frete";
-import type { ConfigLoja, ConfigPagamento } from "@/db/schema";
+import type { ConfigLoja, ConfigPagamento, ConfigPrivacidade } from "@/db/schema";
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
@@ -202,6 +202,48 @@ export function FormPagamento({ pagamento }: { pagamento: ConfigPagamento }) {
       <div className="acoes">
         <button className="btn btn-pri" disabled={pendente}>
           {pendente ? "Salvando…" : "Salvar pagamento"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+export function FormPrivacidade({ privacidade }: { privacidade: ConfigPrivacidade }) {
+  const [estado, acao, pendente] = useActionState<EstadoForm, FormData>(salvarPrivacidade, {});
+  const completo = privacidade.razaoSocial && privacidade.cnpj && privacidade.email;
+  return (
+    <form action={acao} className="cartao">
+      <div className="cartao-h">
+        <h2>Privacidade (LGPD)</h2>
+        {completo ? <span className="chip ok">Completo</span> : <span className="chip at">Falta preencher</span>}
+      </div>
+      {estado.erro && <p className="msg-erro" style={{ margin: "14px 18px 0" }}>{estado.erro}</p>}
+      {estado.ok && <p className="msg-ok" style={{ margin: "14px 18px 0" }}>{estado.ok}</p>}
+      <div className="form">
+        <div className="f">
+          <label htmlFor="razaoSocial">Razão social</label>
+          <input id="razaoSocial" name="razaoSocial" defaultValue={privacidade.razaoSocial} maxLength={120} placeholder="Como está no CNPJ" />
+        </div>
+        <div className="f">
+          <label htmlFor="cnpj">CNPJ</label>
+          <input id="cnpj" name="cnpj" defaultValue={privacidade.cnpj} inputMode="numeric" maxLength={18} placeholder="00.000.000/0000-00" />
+        </div>
+        <div className="f">
+          <label htmlFor="encarregado">Encarregado pelos dados (opcional)</label>
+          <input id="encarregado" name="encarregado" defaultValue={privacidade.encarregado} maxLength={80} placeholder="Nome de quem responde pela LGPD" />
+        </div>
+        <div className="f">
+          <label htmlFor="emailPriv">E-mail para assuntos de privacidade</label>
+          <input id="emailPriv" name="email" type="email" defaultValue={privacidade.email} maxLength={120} />
+        </div>
+        <small className="f cheio">Esses dados aparecem na página “Política de privacidade” da loja. O que ficar em branco não aparece.</small>
+      </div>
+      <div className="acoes">
+        <a className="btn" href="/privacidade" target="_blank" rel="noopener">
+          Ver a política ↗
+        </a>
+        <button className="btn btn-pri" disabled={pendente}>
+          {pendente ? "Salvando…" : "Salvar"}
         </button>
       </div>
     </form>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { exigirPermissao, usuarioAtual } from "@/lib/admin";
 import { historicoExclusoes, listarClientes } from "@/lib/clientes";
+import { listarInscritos } from "@/lib/promocoes";
 import { filtrarClientes } from "@/modules/clientes/clientes";
 import { formatarReais } from "@/modules/dinheiro";
 import { formatarCelular } from "@/modules/pedidos/whatsapp";
@@ -15,7 +16,8 @@ export default async function Clientes({ searchParams }: { searchParams: Promise
   const { q = "", apagado } = await searchParams;
   const eu = await usuarioAtual();
   const dono = !!eu && pode(eu.papel, "clientesExcluir");
-  const [todos, exclusoes] = await Promise.all([listarClientes(), dono ? historicoExclusoes() : Promise.resolve([])]);
+  const [todos, exclusoes, inscritos] = await Promise.all([listarClientes(), dono ? historicoExclusoes() : Promise.resolve([]), listarInscritos()]);
+  const recebem = new Set(inscritos.filter((i) => !i.revogadoEm).map((i) => i.celular));
   const lista = filtrarClientes(todos, q);
   const [p, m, a] = (apagado ?? "").split("-");
 
@@ -56,6 +58,12 @@ export default async function Clientes({ searchParams }: { searchParams: Promise
                       <b>{c.nome}</b>
                       <br />
                       <small style={{ color: "var(--texto-2)" }}>{formatarCelular(c.celular)}</small>
+                      {recebem.has(c.celular) && (
+                        <small style={{ color: "var(--ok)", fontWeight: 700 }}>
+                          {" "}
+                          · recebe promoções
+                        </small>
+                      )}
                       {c.abertos > 0 && (
                         <small style={{ color: "var(--atencao)", fontWeight: 700 }}>
                           {" "}

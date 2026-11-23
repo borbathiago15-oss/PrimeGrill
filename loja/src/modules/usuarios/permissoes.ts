@@ -22,6 +22,8 @@ export const PERMISSOES = {
   clientesVer: ["DONO", "GERENTE"],
   /** LGPD: apagar os dados pessoais de um cliente (só o dono). */
   clientesExcluir: ["DONO"],
+  /** Lista de quem aceitou promoções e envio de campanhas. */
+  promocoes: ["DONO", "GERENTE"],
   /** Studio: folder automático (STU-002). */
   folder: ["DONO", "GERENTE"],
 } as const satisfies Record<string, readonly Papel[]>;

@@ -1,11 +1,11 @@
 import "server-only";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
-import { desc, inArray, isNull } from "drizzle-orm";
+import { desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { agruparClientes, camposAnonimos, digitosCelular } from "@/modules/clientes/clientes";
 
-const { pedidos, pedidoMensagens, pushInscricoes, pedidoEventos, lgpdExclusoes } = schema;
+const { pedidos, pedidoMensagens, pushInscricoes, pedidoEventos, lgpdExclusoes, inscritosPromocoes } = schema;
 
 async function pedidosIdentificados() {
   return (await db())
@@ -82,6 +82,7 @@ export async function excluirDadosCliente(celular: string, autor: string, motivo
     await tx.update(pedidos).set({ ...camposAnonimos(new Date()), pixQrUrl: null }).where(inArray(pedidos.id, ids));
     await tx.delete(pedidoMensagens).where(inArray(pedidoMensagens.pedidoId, ids));
     await tx.delete(pushInscricoes).where(inArray(pushInscricoes.pedidoId, ids));
+    await tx.delete(inscritosPromocoes).where(eq(inscritosPromocoes.celular, digitosCelular(celular)));
     await tx.insert(pedidoEventos).values(ids.map((pedidoId) => ({ pedidoId, status: lista.find((p) => p.id === pedidoId)!.status, nota: "Dados pessoais do cliente apagados a pedido do titular (LGPD)", autor })));
     await tx.insert(lgpdExclusoes).values({ celularFinal: digitosCelular(celular).slice(-4), pedidos: ids.length, mensagens: msgs.length, arquivos: arquivos.length, motivo, autor });
   });

@@ -405,3 +405,25 @@ tr.link:hover td { background: #FCF8F0; }
 .lgpd { border: 2px solid var(--erro); }
 .lgpd .f { display: flex; flex-direction: column; gap: 6px; max-width: 420px; }
 .lgpd .f input { height: 40px; padding: 0 12px; border: 1px solid var(--borda); border-radius: 6px; font: inherit; }
+
+/* ---------- Política de privacidade ---------- */
+.politica { max-width: 760px; margin: 0 auto; padding: 22px 18px 60px; color: #D7CEC0; line-height: 1.6; font-size: 15px; }
+.politica h1 { font-family: var(--f-display); color: var(--osso); font-size: 30px; margin: 14px 0 4px; }
+.politica .atualizada { color: #A99E90; font-size: 13px; margin-bottom: 18px; }
+.politica section { border-top: 1px solid #2A2420; padding: 16px 0; }
+.politica h2 { color: var(--osso); font-size: 17px; margin-bottom: 8px; }
+.politica ul { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.politica p + p { margin-top: 8px; }
+.politica a { color: var(--dourado); text-decoration: underline; }
+.politica .voltar { color: var(--dourado); font-weight: 700; text-decoration: none; }
+/* ---------- Cadastro de ofertas e página pública do folder ---------- */
+.cadastro-ofertas { margin: 26px 16px 8px; padding: 18px; border-radius: 16px; border: 1px solid var(--dourado-esc); background: rgba(212,169,78,.07); display: flex; flex-direction: column; gap: 10px; color: #D7CEC0; max-width: 640px; }
+@media (min-width: 700px) { .cadastro-ofertas { margin-left: auto; margin-right: auto; } }
+.cadastro-ofertas b { color: var(--osso); font-size: 17px; }
+.cadastro-ofertas p { font-size: 14px; line-height: 1.5; }
+.cadastro-ofertas .btn-ouro { flex: none; }
+.cadastro-ofertas a { color: var(--dourado); text-decoration: underline; }
+.ofertas-pub { min-height: 100dvh; background: var(--carvao); display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 18px 12px 40px; }
+.fo-prev.pub { --k: .34; justify-content: center; }
+@media (min-width: 700px) { .fo-prev.pub { --k: .6; } }
+.previa-msg { white-space: pre-wrap; font-family: inherit; font-size: 14px; line-height: 1.5; padding: 14px 18px; background: #E7F5E9; margin: 14px 18px; border-radius: 10px; color: #1A1714; }

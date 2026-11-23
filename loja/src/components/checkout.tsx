@@ -75,6 +75,7 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
       observacao: String(form.get("observacao") ?? ""),
       consentimento: form.get("consentimento") === "on",
       optin: form.get("optin") === "on",
+      promocoes: form.get("promocoes") === "on",
       site: String(form.get("site") ?? ""),
     };
     iniciar(async () => {
@@ -236,11 +237,21 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
           <input className="sr" tabIndex={-1} autoComplete="off" name="site" aria-hidden="true" />
           <label className="check">
             <input type="checkbox" name="consentimento" required />
-            <span>Autorizo o uso dos meus dados para processar e entregar este pedido (LGPD).</span>
+            <span>
+              Autorizo o uso dos meus dados para processar e entregar este pedido, conforme a{" "}
+              <a href="/privacidade" target="_blank" rel="noopener" style={{ color: "var(--dourado)", textDecoration: "underline" }}>
+                política de privacidade
+              </a>
+              .
+            </span>
           </label>
           <label className="check">
             <input type="checkbox" name="optin" defaultChecked />
             <span>Quero receber pelo WhatsApp o peso real, o valor final e o andamento do pedido.</span>
+          </label>
+          <label className="check">
+            <input type="checkbox" name="promocoes" />
+            <span>Quero receber promoções e o folder da semana pelo WhatsApp (opcional; dá para sair quando quiser).</span>
           </label>
         </div>
       </section>
