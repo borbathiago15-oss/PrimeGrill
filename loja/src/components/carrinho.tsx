@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "./idioma";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -95,6 +96,7 @@ export function resumoCarrinho(itens: Itens, produtos: Map<number, ResumoProduto
 
 export function BarraCarrinho() {
   const { itens, produtos, pronto } = useCarrinho();
+  const t = useT();
   const caminho = usePathname();
   const [adicionar, setAdicionar] = useState<string | null>(null);
   useEffect(() => {
@@ -110,7 +112,7 @@ export function BarraCarrinho() {
     <Link href={adicionar ? `/pedido?adicionar=${adicionar}` : "/pedido"} className="barra-carrinho">
       <span style={{ display: "flex", alignItems: "center" }}>
         <span className="q">{qtd}</span>
-        {adicionar ? `Acrescentar ao ${adicionar}` : "Revisar pedido"}
+        {adicionar ? t.carrinho.acrescentarAo(adicionar) : t.carrinho.revisar}
       </span>
       <span className="num">
         {pesado ? "aprox. " : ""}
@@ -122,14 +124,15 @@ export function BarraCarrinho() {
 
 export function SeletorQuantidade({ id, nome }: { id: number; nome: string }) {
   const { itens, definir } = useCarrinho();
+  const t = useT();
   const q = itens[id] ?? 0;
   return (
     <div className="qtd">
-      <button type="button" aria-label={`Diminuir ${nome}`} onClick={() => definir(id, q - 1)}>
+      <button type="button" aria-label={`${t.produto.diminuir} ${nome}`} onClick={() => definir(id, q - 1)}>
         −
       </button>
       <b className="num">{q}</b>
-      <button type="button" aria-label={`Aumentar ${nome}`} onClick={() => definir(id, q + 1)}>
+      <button type="button" aria-label={`${t.produto.aumentar} ${nome}`} onClick={() => definir(id, q + 1)}>
         +
       </button>
     </div>

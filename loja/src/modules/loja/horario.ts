@@ -1,3 +1,4 @@
+import { TEXTOS, type Situacao } from "@/modules/i18n/textos";
 import type { ConfigLoja, ConfigPagamento, HorarioDia } from "@/db/schema";
 import { ENTREGA_PADRAO } from "../entrega/frete";
 
@@ -24,29 +25,34 @@ export function paraMinutos(hhmm: string): number {
   return Number(m[1]) * 60 + Number(m[2]);
 }
 
-export type SituacaoLoja = { aberta: boolean; texto: string };
+export type SituacaoLoja = { aberta: boolean; texto: string; situacao: Situacao };
 
+/** Situação da loja agora. `texto` é em português (painel); `situacao` permite traduzir na loja pública. */
 export function situacaoLoja(config: ConfigLoja, agora: Date): SituacaoLoja {
-  if (config.pausada) return { aberta: false, texto: config.mensagemPausa || "Pausada no momento" };
+  const s = calcularSituacao(config, agora);
+  return { aberta: s.tipo === "aberta", texto: TEXTOS.pt.loja.situacao(s), situacao: s };
+}
+
+function calcularSituacao(config: ConfigLoja, agora: Date): Situacao {
+  if (config.pausada) return { tipo: "pausada", mensagem: config.mensagemPausa };
   const { dia, minutos } = agoraNaLoja(agora);
   const hoje = config.horarios.find((h) => h.dia === dia);
   if (hoje && !hoje.fechado) {
     const abre = paraMinutos(hoje.abre);
     const fecha = paraMinutos(hoje.fecha);
-    if (minutos >= abre && minutos < fecha) return { aberta: true, texto: `Aberta até ${hoje.fecha}` };
-    if (minutos < abre) return { aberta: false, texto: `Abre hoje às ${hoje.abre}` };
+    if (minutos >= abre && minutos < fecha) return { tipo: "aberta", ate: hoje.fecha };
+    if (minutos < abre) return { tipo: "abre_hoje", hora: hoje.abre };
   }
-  const prox = proximaAbertura(config.horarios, dia);
-  return { aberta: false, texto: prox ? `Fechada · abre ${prox}` : "Fechada" };
+  return proximaAbertura(config.horarios, dia);
 }
 
-function proximaAbertura(horarios: HorarioDia[], hoje: number): string | null {
+function proximaAbertura(horarios: HorarioDia[], hoje: number): Situacao {
   for (let i = 1; i <= 7; i++) {
     const d = (hoje + i) % 7;
     const h = horarios.find((x) => x.dia === d);
-    if (h && !h.fechado) return `${i === 1 ? "amanhã" : DIAS[d].toLowerCase()} às ${h.abre}`;
+    if (h && !h.fechado) return { tipo: "abre", dia: d, amanha: i === 1, hora: h.abre };
   }
-  return null;
+  return { tipo: "fechada" };
 }
 
 export const PAGAMENTO_PADRAO: ConfigPagamento = {

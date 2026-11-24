@@ -12,7 +12,7 @@ const { inscritosPromocoes } = schema;
  */
 export async function registrarAceite(p: { celular: string; nome: string; origem: "CHECKOUT" | "SITE" | "PAINEL"; registradoPor?: string }) {
   const celular = digitosCelular(p.celular);
-  if (!/^\d{10,11}$/.test(celular)) return;
+  if (!/^(\d{10,11}|\+\d{8,15})$/.test(celular)) return;
   const nome = p.nome.trim().slice(0, 80) || "Cliente";
   const banco = await db();
   const [ja] = await banco.select().from(inscritosPromocoes).where(eq(inscritosPromocoes.celular, celular));

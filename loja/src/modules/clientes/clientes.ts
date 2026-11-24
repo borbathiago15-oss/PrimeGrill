@@ -5,9 +5,11 @@
 
 export const NOME_ANONIMO = "Cliente removido (LGPD)";
 
+/** Identidade do cliente: dígitos com DDD (Brasil) ou "+<dígitos>" (número estrangeiro). */
 export function digitosCelular(celular: string): string {
   const d = celular.replace(/\D/g, "");
-  return d.length === 13 && d.startsWith("55") ? d.slice(2) : d;
+  if (celular.trim().startsWith("+") && !d.startsWith("55")) return d ? `+${d}` : "";
+  return (d.length === 13 || d.length === 12) && d.startsWith("55") ? d.slice(2) : d;
 }
 
 export type PedidoResumo = {

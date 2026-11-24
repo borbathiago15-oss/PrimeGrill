@@ -1,4 +1,6 @@
 "use client";
+import { useIdioma, useT } from "@/components/idioma";
+import { traduzirErro } from "@/modules/i18n/erros";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +15,9 @@ type Prod = { id: number; nome: string; tipoVenda: "PECA" | "PACOTE"; precoCenta
 export function AdicionarAoPedido({ codigo, produtos }: { codigo: string; produtos: Prod[] }) {
   const { itens, produtos: resumo, limpar, pronto } = useCarrinho();
   const router = useRouter();
+  const t = useT();
+  const idioma = useIdioma();
+  const a = t.acrescentar;
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const lista = Object.entries(itens)
@@ -23,12 +28,12 @@ export function AdicionarAoPedido({ codigo, produtos }: { codigo: string; produt
   if (!pronto) return null;
   return (
     <div className="ck">
-      <h1>Acrescentar ao pedido {codigo}</h1>
+      <h1>{a.titulo(codigo)}</h1>
       {lista.length === 0 ? (
-        <p className="aviso">Seu carrinho está vazio. Volte ao cardápio e escolha os itens.</p>
+        <p className="aviso">{a.vazio}</p>
       ) : (
         <section className="bloco">
-          <h2>Itens novos</h2>
+          <h2>{a.itensNovos}</h2>
           <div className="campos" style={{ gap: 8, fontSize: 14, color: "#D7CEC0" }}>
             {lista.map(({ p, q, id }) => (
               <div key={id} className="linha-valor">
@@ -41,14 +46,17 @@ export function AdicionarAoPedido({ codigo, produtos }: { codigo: string; produt
           </div>
           <div className="tot">
             <div className="r f">
-              <span>Acréscimo {pesado ? "aproximado" : ""}</span>
+              <span>
+                {a.acrescimo}
+                {pesado ? a.aproximado : ""}
+              </span>
               <span className="preco num">{formatarReais(total)}</span>
             </div>
           </div>
         </section>
       )}
-      <p className="aviso">A loja separa e pesa os itens novos e o novo total aparece no link do seu pedido para você confirmar.</p>
-      {erro && <p className="erro-box">{erro}</p>}
+      <p className="aviso">{a.aviso}</p>
+      {erro && <p className="erro-box">{traduzirErro(erro, idioma)}</p>}
       <button
         type="button"
         className="btn-ouro centro"
@@ -67,10 +75,10 @@ export function AdicionarAoPedido({ codigo, produtos }: { codigo: string; produt
           router.push(`/pedido/${codigo}`);
         }}
       >
-        {enviando ? "Enviando…" : "Acrescentar ao meu pedido"}
+        {enviando ? a.enviando : a.botao}
       </button>
       <a href="/" className="btn-linha">
-        Escolher mais itens
+        {a.escolherMais}
       </a>
     </div>
   );

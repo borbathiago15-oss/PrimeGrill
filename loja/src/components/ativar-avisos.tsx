@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/idioma";
 
 import { useEffect, useState } from "react";
 import { ativarAvisosCliente, ativarAvisosLoja, chavePublicaPush } from "@/app/avisos-acoes";
@@ -19,6 +20,7 @@ const chaveLocal = (alvo: string) => `pg-avisos-${alvo}`;
  */
 export function AtivarAvisos({ publico, codigo, tema }: { publico: "CLIENTE" | "LOJA"; codigo?: string; tema: "escuro" | "claro" }) {
   const [estado, setEstado] = useState<Estado>("carregando");
+  const t = useT();
   const alvo = publico === "LOJA" ? "loja" : codigo!;
 
   useEffect(() => {
@@ -49,8 +51,8 @@ export function AtivarAvisos({ publico, codigo, tema }: { publico: "CLIENTE" | "
         localStorage.setItem(chaveLocal(alvo), "1");
       } catch {}
       setEstado("ativo");
-      reg.showNotification(publico === "LOJA" ? "Avisos da loja ativados" : "Avisos ativados", {
-        body: publico === "LOJA" ? "Este aparelho vai avisar novos pedidos, mensagens e pagamentos." : "Vamos avisar quando o valor ficar pronto, quando a loja responder e quando o pedido sair.",
+      reg.showNotification(publico === "LOJA" ? "Avisos da loja ativados" : t.avisos.notifTitulo, {
+        body: publico === "LOJA" ? "Este aparelho vai avisar novos pedidos, mensagens e pagamentos." : t.avisos.notifCorpo,
         icon: "/icones/icone-192.png",
       });
     } catch (e) {
@@ -61,12 +63,12 @@ export function AtivarAvisos({ publico, codigo, tema }: { publico: "CLIENTE" | "
 
   if (estado === "carregando" || estado === "sem-suporte") return null;
   const texto: Record<Exclude<Estado, "carregando" | "sem-suporte">, string> = {
-    pode: publico === "LOJA" ? "🔔 Ativar avisos neste aparelho" : "🔔 Receber avisos deste pedido no celular",
-    ativando: "Ativando…",
-    ativo: publico === "LOJA" ? "🔔 Avisos ativos neste aparelho" : "🔔 Avisos ativos para este pedido",
-    bloqueado: "Avisos bloqueados no navegador: libere as notificações deste site nas configurações.",
-    "ios-instalar": "No iPhone, para receber avisos, instale o app: toque em Compartilhar e depois em “Adicionar à Tela de Início”.",
-    erro: "Não deu para ativar agora. Tente de novo.",
+    pode: publico === "LOJA" ? "🔔 Ativar avisos neste aparelho" : t.avisos.ativar,
+    ativando: t.avisos.ativando,
+    ativo: publico === "LOJA" ? "🔔 Avisos ativos neste aparelho" : t.avisos.ativo,
+    bloqueado: t.avisos.bloqueado,
+    "ios-instalar": t.avisos.iosInstalar,
+    erro: t.avisos.erro,
   };
   const clicavel = estado === "pode" || estado === "erro";
   return (

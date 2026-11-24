@@ -137,6 +137,10 @@ export const pedidos = pgTable(
     totalEstimadoCentavos: integer("total_estimado_centavos").notNull(),
     temItemPesado: boolean("tem_item_pesado").notNull(),
     observacao: text("observacao").notNull().default(""),
+    /** Motivo informado pela loja ao recusar/cancelar (aparece para o cliente no link do pedido). */
+    motivoCancelamento: text("motivo_cancelamento"),
+    /** Idioma do cliente (pt, en, es): avisos e mensagens prontas saem nesse idioma. */
+    idioma: text("idioma").notNull().default("pt"),
     /** LGPD: dados pessoais apagados a pedido do titular; valores e itens ficam para a contabilidade. */
     anonimizadoEm: timestamp("anonimizado_em", { withTimezone: true }),
     consentimentoLgpd: boolean("consentimento_lgpd").notNull(),

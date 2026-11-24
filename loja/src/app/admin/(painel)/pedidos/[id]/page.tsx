@@ -1,3 +1,4 @@
+import { numeroWhatsapp } from "@/modules/pedidos/whatsapp";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { mudarStatus } from "../../acoes";
@@ -31,7 +32,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
   const { pedido: p, itens, eventos } = dados;
   const pesagens = await (await db()).select().from(schema.pedidoPesagens).where(eq(schema.pedidoPesagens.pedidoId, p.id));
   const st = ROTULO_STATUS[p.status];
-  const celular = "55" + p.clienteCelular.replace(/\D/g, "");
+  const celular = numeroWhatsapp(p.clienteCelular);
   const destino = [p.endereco && `${p.endereco}, ${p.numero}`, p.bairro, p.cidade, p.cep].filter(Boolean).join(", ");
   const origem = config.entrega.lat !== null ? `${config.entrega.lat},${config.entrega.lng}` : config.entrega.endereco;
   const link = await linkDoPedido(p.codigo);
@@ -118,6 +119,7 @@ export default async function DetalhePedido({ params }: { params: Promise<{ id: 
           {p.status !== "CANCELADO" && p.status !== "NOVO" && (
             <CalculadoraPesagem
               linkCliente={link}
+              idioma={p.idioma}
               podeEnviar={p.status === "AGUARDANDO_CLIENTE" || (p.status === "EM_SEPARACAO" && !p.alteracaoCliente)}
               pedidoId={p.id}
               baixaFeita={p.baixaEstoque}

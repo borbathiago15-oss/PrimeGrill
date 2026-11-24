@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/idioma";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -22,6 +23,7 @@ export function AppInstalavel() {
   const [evento, setEvento] = useState<EventoInstalar | null>(null);
   const [ios, setIos] = useState(false);
   const [mostrar, setMostrar] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -52,8 +54,8 @@ export function AppInstalavel() {
     <div className="instalar" role="dialog" aria-label="Instalar o app">
       <img src="/icones/icone-192.png" alt="" width={44} height={44} />
       <div>
-        <b>Prime Grill no seu celular</b>
-        {ios ? <small>Toque em Compartilhar e depois em “Adicionar à Tela de Início”.</small> : <small>Instale o app: cardápio e pedidos a um toque.</small>}
+        <b>{t.app.titulo}</b>
+        {ios ? <small>{t.app.ios}</small> : <small>{t.app.android}</small>}
       </div>
       {!ios && evento && (
         <button
@@ -64,10 +66,10 @@ export function AppInstalavel() {
             setMostrar(false);
           }}
         >
-          Instalar
+          {t.app.instalar}
         </button>
       )}
-      <button type="button" className="x" onClick={fechar} aria-label="Fechar">
+      <button type="button" className="x" onClick={fechar} aria-label={t.app.fechar}>
         ×
       </button>
     </div>
@@ -88,11 +90,12 @@ export function LembrarPedido({ codigo }: { codigo: string }) {
 /** Atalho "Meus pedidos" no cardápio, com os pedidos feitos neste aparelho. */
 export function MeusPedidos() {
   const [lista, setLista] = useState<string[]>([]);
+  const t = useT();
   useEffect(() => setLista(ler<string[]>(CHAVE_PEDIDOS, [])), []);
   if (!lista.length) return null;
   return (
-    <nav className="meus-pedidos" aria-label="Meus pedidos">
-      <span>Meus pedidos:</span>
+    <nav className="meus-pedidos" aria-label={t.app.meusPedidos}>
+      <span>{t.app.meusPedidos}</span>
       {lista.map((c) => (
         <Link key={c} href={`/pedido/${c}`}>
           {c}

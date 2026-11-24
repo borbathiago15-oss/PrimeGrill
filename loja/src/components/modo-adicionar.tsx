@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/components/idioma";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ export function sairDoModoAdicionar() {
 /** Faixa no cardápio quando o cliente está escolhendo itens para acrescentar a um pedido já feito. */
 export function FaixaModoAdicionar() {
   const [codigo, setCodigo] = useState<string | null>(null);
+  const t = useT();
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("adicionar");
     if (p && /^PG-[A-Z0-9]{6}$/.test(p)) {
@@ -35,11 +37,9 @@ export function FaixaModoAdicionar() {
   if (!codigo) return null;
   return (
     <div className="faixa-adicionar">
-      <span>
-        Escolha os itens para <b>acrescentar ao pedido {codigo}</b>.
-      </span>
+      <span>{t.acrescentar.faixa(codigo)}</span>
       <span style={{ display: "flex", gap: 10 }}>
-        <Link href={`/pedido/${codigo}`}>Voltar ao pedido</Link>
+        <Link href={`/pedido/${codigo}`}>{t.acrescentar.voltar}</Link>
         <button
           type="button"
           onClick={() => {
@@ -47,7 +47,7 @@ export function FaixaModoAdicionar() {
             setCodigo(null);
           }}
         >
-          Cancelar
+          {t.acrescentar.cancelar}
         </button>
       </span>
     </div>

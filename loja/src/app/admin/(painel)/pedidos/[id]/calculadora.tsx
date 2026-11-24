@@ -1,4 +1,6 @@
 "use client";
+import { idiomaValido } from "@/modules/i18n/idiomas";
+import { MENSAGENS_LOJA } from "@/modules/i18n/mensagens-loja";
 
 import { useActionState, useState } from "react";
 import { confirmarSeparacao, type EstadoSeparacao } from "./acoes";
@@ -16,6 +18,8 @@ export function CalculadoraPesagem(props: {
   codigo: string;
   linkCliente: string;
   podeEnviar: boolean;
+  /** Idioma do cliente: a mensagem pronta do WhatsApp sai nesse idioma. */
+  idioma: string;
   celularCliente: string;
   freteCentavos: number;
   freteACombinar: boolean;
@@ -23,8 +27,9 @@ export function CalculadoraPesagem(props: {
   baixaFeita: boolean;
   pesagens: Pesagem[];
 }) {
-  const { pedidoId, codigo, linkCliente, podeEnviar, celularCliente, freteCentavos, freteACombinar, itens, baixaFeita } = props;
+  const { pedidoId, codigo, linkCliente, podeEnviar, idioma, celularCliente, freteCentavos, freteACombinar, itens, baixaFeita } = props;
   const [estado, acao, enviando] = useActionState<EstadoSeparacao, FormData>(confirmarSeparacao, {});
+  const M = MENSAGENS_LOJA[idiomaValido(idioma) ? idioma : "pt"];
   const pecas = itens.flatMap((i) => (i.tipoVenda === "PECA" ? Array.from({ length: i.quantidade }, (_, n) => ({ chave: `${i.id}-${n}`, item: i, n })) : []));
   // Peças já pesadas, na ordem de cada item (se o cliente tirou uma peça, as que sobraram sobem de posição).
   const registrados = new Map<string, number>();
@@ -51,17 +56,17 @@ export function CalculadoraPesagem(props: {
     }
     const v = valorPorPeso(g, item.precoCentavos);
     total += v;
-    linhas.push(`• ${item.nome}${item.quantidade > 1 ? ` (peça ${n + 1})` : ""}: ${formatarKg(g)} × R$ ${formatarValor(item.precoCentavos)}/kg = ${formatarReais(v)}`);
+    linhas.push(M.linhaPeca(item.nome, item.quantidade > 1 ? n + 1 : null, formatarKg(g), formatarValor(item.precoCentavos), formatarReais(v)));
   }
   for (const i of itens.filter((x) => x.tipoVenda === "PACOTE")) {
     const v = i.precoCentavos * i.quantidade;
     total += v;
-    linhas.push(`• ${i.quantidade}x ${i.nome}: ${formatarReais(v)}`);
+    linhas.push(M.linhaPacote(i.quantidade, i.nome, formatarReais(v)));
   }
-  if (frete) linhas.push(`• Frete: ${formatarReais(frete)}`);
+  if (frete) linhas.push(M.linhaFrete(formatarReais(frete)));
   if (freteACombinar && !baixaFeita && reaisParaCentavos(freteTxt) === null) completo = false;
   const final = total + frete;
-  const msg = [`*Pedido ${codigo} ${pecas.length ? "pesado" : "separado"}* — Prime Grill Paiva`, "", ...linhas, "", `*Total final: ${formatarReais(final)}*`, "", "Confirme e escolha como pagar (Pix, cartão ou na entrega/retirada) neste link:", linkCliente].join("\n");
+  const msg = [M.pesadoTitulo(codigo, pecas.length > 0), "", ...linhas, "", M.totalFinal(formatarReais(final)), "", M.confirmeNoLink, linkCliente].join("\n");
   // Peças já pesadas ficam travadas; só as pendentes (itens acrescentados) pedem peso.
   const pendentes = itens.some((i) => i.quantidade > i.separados);
   const pronto = !pendentes || !!estado.ok;

@@ -1,4 +1,5 @@
 "use server";
+import { AVISOS } from "@/modules/i18n/avisos";
 import { avisarCliente, avisarLoja } from "@/lib/push";
 
 import { and, eq, inArray } from "drizzle-orm";
@@ -84,7 +85,7 @@ export async function confirmarSeparacao(_: EstadoSeparacao, form: FormData): Pr
     return null;
   });
   if (erro) return { erro };
-  avisarCliente(pedidoId, (c) => ({ titulo: "Seu pedido foi pesado", corpo: `${c}: o valor final está pronto. Toque para conferir e escolher como pagar.` }));
+  avisarCliente(pedidoId, (c, l) => AVISOS[l].pesado(c));
   revalidatePath(`/admin/pedidos/${pedidoId}`);
   revalidatePath("/", "layout");
   return { ok: "Separação registrada e estoque baixado. Envie o valor final ao cliente." };
@@ -103,7 +104,7 @@ export async function adicionarItensPainel(_: EstadoSeparacao, form: FormData): 
   const { adicionarItens } = await import("@/lib/adicionar-itens");
   const r = await adicionarItens({ id: pedidoId }, itens, { autor, nota: "Itens acrescentados pela loja" });
   if (!r.ok) return { erro: r.erro };
-  avisarCliente(pedidoId, (c) => ({ titulo: "Itens acrescentados ao seu pedido", corpo: `${c}: ${r.resumo}. Avisamos quando o novo total estiver pronto.` }));
+  avisarCliente(pedidoId, (c, l) => AVISOS[l].itensAcrescentados(c, r.resumo));
   revalidatePath(`/admin/pedidos/${pedidoId}`);
   return { ok: r.voltouParaSeparacao ? `Acrescentado: ${r.resumo}. Pese as peças novas abaixo e reenvie o total.` : `Acrescentado: ${r.resumo}.` };
 }
@@ -134,7 +135,7 @@ export async function aceitarPedido(form: FormData) {
   const autor = await exigirAdmin();
   const id = Number(form.get("pedidoId"));
   if (await registrar(id, { status: "EM_SEPARACAO" }, "EM_SEPARACAO", "Pedido aceito; separação iniciada", autor, ["NOVO"]))
-    avisarCliente(id, (c) => ({ titulo: "Pedido aceito!", corpo: `${c}: já estamos separando seus cortes.` }));
+    avisarCliente(id, (c, l) => AVISOS[l].aceito(c));
 }
 
 /** Alternativa manual (PG-P-001): o cliente respondeu pelo WhatsApp e o atendente registra a forma de pagamento. */
@@ -142,7 +143,14 @@ export async function registrarFormaPeloAtendente(form: FormData) {
   const autor = await exigirAdmin();
   const forma = String(form.get("forma"));
   if (forma !== "PIX" && forma !== "CARTAO_LINK" && forma !== "NA_ENTREGA") return;
-  await registrar(Number(form.get("pedidoId")), { status: "CONFIRMADO", formaPagamento: forma }, "CONFIRMADO", "Cliente confirmou pelo WhatsApp · forma registrada pelo atendente", autor, ["AGUARDANDO_CLIENTE", "CONFIRMADO"]);
+  const id = Number(form.get("pedidoId"));
+  const ok = await registrar(id, { status: "CONFIRMADO", formaPagamento: forma }, "CONFIRMADO", "Forma de pagamento definida pela loja", autor, ["AGUARDANDO_CLIENTE", "CONFIRMADO"]);
+  if (ok) {
+    const { MENSAGENS_LOJA } = await import("@/modules/i18n/mensagens-loja");
+    const [ped] = await (await db()).select({ modo: pedidos.modo }).from(pedidos).where(eq(pedidos.id, id));
+    const chaveForma = forma === "NA_ENTREGA" && ped?.modo !== "ENTREGA" ? "NA_RETIRADA" : forma;
+    avisarCliente(id, (c, l) => AVISOS[l].formaDefinida(c, MENSAGENS_LOJA[l].formas[chaveForma]));
+  }
 }
 
 /** Atendente cola o link de pagamento do cartão gerado na maquininha/banco. */
@@ -157,7 +165,7 @@ export async function salvarLinkCartao(_: EstadoSeparacao, form: FormData): Prom
   }
   if (url.protocol !== "https:" || link.length > 500) return { erro: "O link do cartão precisa começar com https://" };
   const ok = await registrar(Number(form.get("pedidoId")), { linkCartao: url.toString(), formaPagamento: "CARTAO_LINK" }, "CONFIRMADO", "Link do cartão anexado ao pedido", autor, ["CONFIRMADO"]);
-  if (ok) avisarCliente(Number(form.get("pedidoId")), (c) => ({ titulo: "Link de pagamento pronto", corpo: `${c}: toque para pagar com cartão de crédito.` }));
+  if (ok) avisarCliente(Number(form.get("pedidoId")), (c, l) => AVISOS[l].linkCartao(c));
   return ok ? { ok: "Link salvo: ele já aparece para o cliente no link do pedido." } : { erro: "O pedido precisa estar confirmado pelo cliente." };
 }
 
@@ -166,7 +174,7 @@ export async function marcarPago(form: FormData) {
   const autor = await exigirAdmin();
   const id = Number(form.get("pedidoId"));
   if (await registrar(id, { pagamentoStatus: "PAGO", pagoEm: new Date() }, "CONFIRMADO", "Pagamento conferido e recebido", autor, ["CONFIRMADO"]))
-    avisarCliente(id, (c) => ({ titulo: "Pagamento confirmado ✓", corpo: `${c}: recebemos seu pagamento. Obrigado!` }));
+    avisarCliente(id, (c, l) => AVISOS[l].pago(c));
 }
 
 /** Último passo: entregue (ou retirado). Pagamento na entrega é dado como recebido aqui. */
@@ -185,7 +193,7 @@ export async function concluirPedido(form: FormData) {
     autor,
     ["CONFIRMADO"],
   );
-  avisarCliente(id, (c) => ({ titulo: p.modo === "ENTREGA" ? "Pedido entregue" : "Pedido retirado", corpo: `${c}: obrigado pela preferência. Bom churrasco! 🔥` }));
+  avisarCliente(id, (c, l) => AVISOS[l].concluido(c, p.modo === "ENTREGA"));
 }
 
 /** Pix gerado na maquininha/banco com o valor exato: o atendente cola o copia e cola ou manda a foto do QR. */
@@ -206,7 +214,7 @@ export async function salvarPixManual(_: EstadoSeparacao, form: FormData): Promi
     if (r.valorCentavos !== null && ped.totalFinalCentavos !== null && r.valorCentavos !== ped.totalFinalCentavos)
       return { erro: `Esse Pix é de ${formatarReais(r.valorCentavos)}, mas o total do pedido é ${formatarReais(ped.totalFinalCentavos)}. Gere de novo com o valor exato.` };
     await registrar(id, { pixCodigo: r.codigo, pixQrUrl: null, formaPagamento: "PIX" }, "CONFIRMADO", "Pix da maquininha anexado (copia e cola)", autor, ["CONFIRMADO"]);
-    avisarCliente(id, (c) => ({ titulo: "Seu Pix está pronto", corpo: `${c}: toque para copiar o Pix com o valor exato.` }));
+    avisarCliente(id, (c, l) => AVISOS[l].pixCopiaECola(c));
     return { ok: r.valorCentavos === null ? "Pix salvo. Atenção: esse código não traz valor; o cliente vai digitar o valor." : "Pix salvo com o valor exato. Ele já aparece no link do cliente." };
   }
   if (foto instanceof File && foto.size > 0) {
@@ -214,7 +222,7 @@ export async function salvarPixManual(_: EstadoSeparacao, form: FormData): Promi
     const r = await salvarFoto(foto, "pix");
     if (!r.ok) return { erro: r.erro };
     await registrar(id, { pixQrUrl: r.url, pixCodigo: null, formaPagamento: "PIX" }, "CONFIRMADO", "QR Code do Pix da maquininha anexado (foto)", autor, ["CONFIRMADO"]);
-    avisarCliente(id, (c) => ({ titulo: "Seu Pix está pronto", corpo: `${c}: toque para ver o QR Code e pagar.` }));
+    avisarCliente(id, (c, l) => AVISOS[l].pixQr(c));
     return { ok: "Foto do QR salva. Ela já aparece no link do cliente." };
   }
   return { erro: "Cole o Pix copia e cola ou escolha a foto do QR Code." };
@@ -227,5 +235,51 @@ export async function revisarAlteracao(form: FormData) {
   if (itens.some((i) => i.quantidade > i.separados)) return; // há itens novos: precisam ser pesados antes
   const id = Number(form.get("pedidoId"));
   if (await registrar(id, { status: "AGUARDANDO_CLIENTE", alteracaoCliente: null }, "AGUARDANDO_CLIENTE", "Alteração do cliente revisada; novo total pronto para envio", autor, ["EM_SEPARACAO"]))
-    avisarCliente(id, (c) => ({ titulo: "Novo total pronto", corpo: `${c}: conferimos sua alteração. Toque para confirmar o valor.` }));
+    avisarCliente(id, (c, l) => AVISOS[l].novoTotal(c));
+}
+
+/**
+ * Recusar (pedido novo) ou cancelar (em andamento, ainda não pago) com motivo.
+ * Qualquer pessoa da equipe pode; o estoque já baixado volta sozinho (estorno) e o cliente é avisado no idioma dele.
+ */
+export async function cancelarPedidoPainel(_: EstadoSeparacao, form: FormData): Promise<EstadoSeparacao> {
+  const autor = await exigirAdmin();
+  const id = Number(form.get("pedidoId"));
+  const chave = String(form.get("motivo") ?? "");
+  const texto = String(form.get("texto") ?? "").trim().slice(0, 200);
+  const { MOTIVOS_CANCELAMENTO } = await import("@/modules/i18n/mensagens-loja");
+  const banco = await db();
+  const [ped] = await banco.select().from(pedidos).where(eq(pedidos.id, id));
+  if (!ped) return { erro: "Pedido não encontrado." };
+  if (ped.status === "CANCELADO" || ped.status === "CONCLUIDO") return { erro: "Este pedido já foi encerrado." };
+  if (ped.pagamentoStatus === "PAGO") return { erro: "Pedido já pago: o cancelamento (e a devolução do dinheiro) é feito pelo gerente no ajuste manual." };
+  const idioma = (["pt", "en", "es"].includes(ped.idioma) ? ped.idioma : "pt") as "pt" | "en" | "es";
+  let motivoCliente: string;
+  let motivoEquipe: string;
+  if (chave === "OUTRO") {
+    if (texto.length < 3) return { erro: "Escreva o motivo." };
+    motivoCliente = texto;
+    motivoEquipe = texto;
+  } else if (chave in MOTIVOS_CANCELAMENTO) {
+    const m = MOTIVOS_CANCELAMENTO[chave as keyof typeof MOTIVOS_CANCELAMENTO];
+    motivoCliente = m[idioma];
+    motivoEquipe = m.pt;
+  } else return { erro: "Escolha o motivo." };
+
+  if (ped.baixaEstoque) {
+    const { estornarPedido } = await import("@/lib/estorno");
+    await estornarPedido(id, autor);
+  }
+  const ok = await registrar(
+    id,
+    { status: "CANCELADO", motivoCancelamento: motivoCliente },
+    "CANCELADO",
+    `${ped.status === "NOVO" ? "Pedido recusado" : "Pedido cancelado"}: ${motivoEquipe}`,
+    autor,
+    ["NOVO", "EM_SEPARACAO", "AGUARDANDO_CLIENTE", "CONFIRMADO"],
+  );
+  if (!ok) return { erro: "Não foi possível cancelar. Atualize a página." };
+  avisarCliente(id, (c, l) => AVISOS[l].cancelado(c, motivoCliente));
+  revalidatePath("/", "layout");
+  return {};
 }

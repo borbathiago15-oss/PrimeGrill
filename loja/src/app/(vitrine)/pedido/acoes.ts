@@ -1,4 +1,7 @@
 "use server";
+import { idiomaAtual } from "@/lib/idioma";
+import { traduzirErro } from "@/modules/i18n/erros";
+import type { Idioma } from "@/modules/i18n/idiomas";
 
 import { z } from "zod";
 import { registrarPedido } from "@/lib/novo-pedido";
@@ -24,6 +27,12 @@ const entrada = z.object({
 export type ResultadoPedido = { ok: true; codigo: string } | { ok: false; erro: string };
 
 export async function criarPedido(dados: unknown): Promise<ResultadoPedido> {
+  const idioma = await idiomaAtual();
+  const r = await criarPedidoPt(dados, idioma);
+  return r.ok ? r : { ok: false, erro: traduzirErro(r.erro, idioma) };
+}
+
+async function criarPedidoPt(dados: unknown, idioma: Idioma): Promise<ResultadoPedido> {
   const v = entrada.safeParse(dados);
   if (!v.success) return { ok: false, erro: v.error.issues[0]?.message ?? "Dados inválidos." };
   const d = v.data;
@@ -34,7 +43,7 @@ export async function criarPedido(dados: unknown): Promise<ResultadoPedido> {
 
   const r = await registrarPedido(
     { ...d, celular },
-    { origem: "LOJA_ONLINE", autor: "cliente", nota: "Pedido feito pela loja online", freteFlexivel: false },
+    { origem: "LOJA_ONLINE", autor: "cliente", nota: "Pedido feito pela loja online", freteFlexivel: false, idioma },
   );
   // Consentimento separado para promoções (LGPD): só grava se o cliente marcou.
   if (r.ok && d.promocoes) {

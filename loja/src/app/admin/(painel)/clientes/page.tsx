@@ -75,7 +75,7 @@ export default async function Clientes({ searchParams }: { searchParams: Promise
                     <td className="n">{formatarReais(c.totalCentavos)}</td>
                     <td className="num">{data.format(c.ultimo)}</td>
                     <td>
-                      <Link href={`/admin/clientes/${c.celular}`} className="btn btn-pq">
+                      <Link href={`/admin/clientes/${encodeURIComponent(c.celular)}`} className="btn btn-pq">
                         Ver
                       </Link>
                     </td>

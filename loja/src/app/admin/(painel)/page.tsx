@@ -89,6 +89,8 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                       <small style={{ color: "var(--texto-2)" }}>
                         {p.clienteCelular}
                         {p.origem !== "LOJA_ONLINE" && ` · ${p.origem === "WHATSAPP" ? "WhatsApp" : "Balcão"}`}
+                        {p.idioma === "en" && " · 🇺🇸 inglês"}
+                        {p.idioma === "es" && " · 🇪🇸 espanhol"}
                       </small>
                       {comMensagem.has(p.id) && (
                         <>

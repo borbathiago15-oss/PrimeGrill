@@ -98,3 +98,4 @@
 | 2026-11-23 | Acrescentar itens a pedido aberto (cliente e loja), anexos no chat e avisos no celular por Web Push (ECM-001 §8.5) |
 | 2026-11-23 | LGPD-001: tela Clientes e exclusão de dados pessoais a pedido do titular (só Dono), com anonimização dos pedidos e registro da exclusão |
 | 2026-11-23 | Política de privacidade pública (/privacidade) e cadastro de promoções com consentimento, campanhas com folder e descadastro (LGPD-001 §4–5) |
+| 2026-11-24 | Loja em PT/EN/ES com celular estrangeiro e avisos/mensagens no idioma do cliente; recusar/cancelar com motivo e loja definindo a forma de pagamento (ECM-001 §8.6) |

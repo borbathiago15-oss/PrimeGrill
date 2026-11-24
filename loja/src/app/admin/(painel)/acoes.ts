@@ -36,12 +36,13 @@ export async function mudarStatus(form: FormData) {
   }
   const banco = await db();
   await banco.transaction(async (tx) => {
-    await tx.update(pedidos).set({ status, atualizadoEm: new Date() }).where(eq(pedidos.id, id));
+    await tx.update(pedidos).set({ status, atualizadoEm: new Date(), ...(status === "CANCELADO" && nota ? { motivoCancelamento: nota } : {}) }).where(eq(pedidos.id, id));
     await tx.insert(pedidoEventos).values({ pedidoId: id, status, nota, autor });
   });
   if (status === "CANCELADO") {
     const { avisarCliente } = await import("@/lib/push");
-    avisarCliente(id, (c) => ({ titulo: "Pedido cancelado", corpo: `${c}: fale com a loja se tiver dúvidas.` }));
+    const { AVISOS } = await import("@/modules/i18n/avisos");
+    avisarCliente(id, (c, l) => AVISOS[l].cancelado(c, nota || null));
   }
   revalidatePath(`/admin/pedidos/${id}`);
   revalidatePath("/", "layout");

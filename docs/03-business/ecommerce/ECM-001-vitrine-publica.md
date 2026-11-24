@@ -113,3 +113,15 @@ Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o aten
   - Android e computador: funciona no navegador ou no app instalado. iPhone (iOS 16.4+): só com o app instalado na Tela de Início.
   - Chaves VAPID: variáveis `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` se existirem; senão o sistema gera uma vez e guarda no banco (`chaves_sistema`).
   - Com o app aberto em segundo plano, o título da aba mostra "💬 Nova mensagem".
+
+## 8.6 Idiomas (PT / EN / ES), turistas e mais controle no painel
+
+- **Seletor PT · EN · ES** no topo da loja. Na primeira visita vale o idioma do celular (pt, en, es; outro idioma → inglês); a escolha fica salva por 1 ano.
+- Traduzido: cardápio (categorias e subtítulos), produto, carrinho, checkout, link do pedido, formas de pagamento, alteração/acréscimo de itens, chat, avisos no celular, cadastro de ofertas e descadastro, página sem conexão (nos três idiomas). Política de privacidade: resumo em EN/ES no topo; o texto legal continua em português.
+- Nomes de produtos e marcas não são traduzidos. Valores seguem em reais no formato brasileiro.
+- Erros do servidor (CEP, estoque, pagamento…) são traduzidos na tela do cliente (`modules/i18n/erros.ts`).
+- **Celular estrangeiro:** aceita número com código do país (+1, +54…); links de WhatsApp e cadastro funcionam para os dois tipos.
+- **Idioma no pedido** (`pedidos.idioma`): avisos no celular, mensagens prontas de WhatsApp do painel (valor final, Pix, cartão, saiu/pronto, cancelamento) e o motivo de cancelamento saem no idioma do cliente. O painel mostra "🇺🇸 inglês"/"🇪🇸 espanhol" no pedido e na lista.
+- Textos ficam em `src/modules/i18n/` (`textos.ts`, `avisos.ts`, `mensagens-loja.ts`); um teste garante que os três idiomas têm as mesmas chaves.
+- **Recusar/cancelar no painel:** botão em todas as etapas até o pagamento, com motivos prontos (esgotado, fora da área, sem horário, duplicado, a pedido do cliente, sem pagamento) ou texto livre. O estoque volta sozinho, o cliente vê o motivo no link e recebe aviso. Pedido já pago continua só no ajuste manual do gerente.
+- **Loja define a forma de pagamento:** no passo "Cliente confirma", botões Pix / Cartão / Na entrega–retirada para definir sem esperar o cliente; também dá para trocar a forma depois. O cliente recebe o aviso e o link mostra como pagar.

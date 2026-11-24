@@ -1,3 +1,5 @@
+import { numeroWhatsapp } from "@/modules/pedidos/whatsapp";
+
 /** Monta a mensagem de uma campanha para um inscrito (WhatsApp). Sempre leva o link de descadastro (LGPD). */
 export function mensagemCampanha(p: { nome: string; mensagem: string; site: string; folderId: number | null; token: string }): string {
   const primeiro = p.nome.trim().split(/\s+/)[0] ?? "";
@@ -8,6 +10,6 @@ export function mensagemCampanha(p: { nome: string; mensagem: string; site: stri
   return linhas.join("\n");
 }
 
-export function linkWhatsappPara(celularDigitos: string, texto: string): string {
-  return `https://wa.me/55${celularDigitos}?text=${encodeURIComponent(texto)}`;
+export function linkWhatsappPara(celular: string, texto: string): string {
+  return `https://wa.me/${numeroWhatsapp(celular)}?text=${encodeURIComponent(texto)}`;
 }

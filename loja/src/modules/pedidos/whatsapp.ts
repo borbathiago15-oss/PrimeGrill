@@ -62,11 +62,30 @@ export function linkWhatsapp(numero: string, mensagem: string): string {
 }
 
 /** Normaliza celular brasileiro: retorna só dígitos (DDD + número) ou null. */
+/**
+ * Celular do cliente.
+ * - Brasil: devolve só os dígitos com DDD (ex.: 81999990000), exige o 9 do celular.
+ * - Exterior (turista): número começando com "+" ou "00" e código de país diferente de 55 → "+<dígitos>" (padrão E.164).
+ */
 export function normalizarCelular(texto: string): string | null {
-  const d = texto.replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/, "");
+  const bruto = texto.trim();
+  const internacional = /^(\+|00)/.test(bruto);
+  let d = bruto.replace(/\D/g, "");
+  if (internacional && bruto.startsWith("00")) d = d.slice(2);
+  if (internacional && !d.startsWith("55")) return /^[1-9]\d{7,14}$/.test(d) ? `+${d}` : null;
+  d = d.replace(/^55(?=\d{10,11}$)/, "");
   return /^\d{2}9\d{8}$/.test(d) ? d : null;
 }
 
 export function formatarCelular(d: string): string {
+  if (d.startsWith("+")) return d;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/** Número para o link wa.me: Brasil ganha o 55; número estrangeiro vai como está (sem o "+"). */
+export function numeroWhatsapp(celular: string): string {
+  const d = celular.replace(/\D/g, "");
+  if (celular.trim().startsWith("+")) return d;
+  if (/^\d{10,11}$/.test(d)) return `55${d}`;
+  return d;
 }

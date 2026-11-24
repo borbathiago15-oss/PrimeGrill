@@ -4,7 +4,7 @@ import { exigirPermissao, usuarioAtual } from "@/lib/admin";
 import { pedidosDoCliente } from "@/lib/clientes";
 import { ROTULO_STATUS } from "@/lib/pedidos";
 import { formatarReais } from "@/modules/dinheiro";
-import { formatarCelular } from "@/modules/pedidos/whatsapp";
+import { formatarCelular, numeroWhatsapp } from "@/modules/pedidos/whatsapp";
 import { pode } from "@/modules/usuarios/permissoes";
 import { ExcluirCliente } from "../excluir";
 
@@ -14,8 +14,8 @@ const ABERTOS = ["NOVO", "EM_SEPARACAO", "AGUARDANDO_CLIENTE", "CONFIRMADO"];
 
 export default async function Cliente({ params }: { params: Promise<{ celular: string }> }) {
   await exigirPermissao("clientesVer");
-  const { celular } = await params;
-  if (!/^\d{10,11}$/.test(celular)) notFound();
+  const celular = decodeURIComponent((await params).celular);
+  if (!/^(\d{10,11}|\+\d{8,15})$/.test(celular)) notFound();
   const lista = await pedidosDoCliente(celular);
   if (!lista.length) notFound();
   const eu = await usuarioAtual();
@@ -28,7 +28,7 @@ export default async function Cliente({ params }: { params: Promise<{ celular: s
         <h1>{lista[0].clienteNome}</h1>
         <span className="rotulo">{formatarCelular(celular)}</span>
         <div className="esp" />
-        <a className="btn btn-pq" href={`https://wa.me/55${celular}`} target="_blank" rel="noopener noreferrer">
+        <a className="btn btn-pq" href={`https://wa.me/${numeroWhatsapp(celular)}`} target="_blank" rel="noopener noreferrer">
           WhatsApp ↗
         </a>
         <Link href="/admin/clientes" className="btn btn-pq">

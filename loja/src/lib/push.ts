@@ -1,3 +1,4 @@
+import { idiomaValido, type Idioma } from "@/modules/i18n/idiomas";
 import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { after } from "next/server";
@@ -90,19 +91,19 @@ function emSegundoPlano(fn: () => Promise<void>) {
 async function pedidoPor(alvo: number | string) {
   const banco = await db();
   const [p] = await banco
-    .select({ id: pedidos.id, codigo: pedidos.codigo, cliente: pedidos.clienteNome })
+    .select({ id: pedidos.id, codigo: pedidos.codigo, cliente: pedidos.clienteNome, idioma: pedidos.idioma })
     .from(pedidos)
     .where(typeof alvo === "number" ? eq(pedidos.id, alvo) : eq(pedidos.codigo, alvo));
   return p ?? null;
 }
 
-export function avisarCliente(alvo: number | string, aviso: (codigo: string) => Omit<Aviso, "url">) {
+export function avisarCliente(alvo: number | string, aviso: (codigo: string, idioma: Idioma) => Omit<Aviso, "url">) {
   emSegundoPlano(async () => {
     const banco = await db();
     const p = await pedidoPor(alvo);
     if (!p) return;
     const linhas = await banco.select().from(pushInscricoes).where(and(eq(pushInscricoes.publico, "CLIENTE"), eq(pushInscricoes.pedidoId, p.id)));
-    await enviar(linhas, { ...aviso(p.codigo), url: `/pedido/${p.codigo}`, tag: `pedido-${p.codigo}` });
+    await enviar(linhas, { ...aviso(p.codigo, idiomaValido(p.idioma) ? p.idioma : "pt"), url: `/pedido/${p.codigo}`, tag: `pedido-${p.codigo}` });
   });
 }
 

@@ -1,4 +1,6 @@
 "use client";
+import { useIdioma, useT } from "@/components/idioma";
+import { traduzirErro } from "@/modules/i18n/erros";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -25,6 +27,8 @@ export function ChatPedido({
   ler: (depoisDe: number) => Promise<Msg[]>;
   enviar: (form: FormData) => Promise<{ erro?: string }>;
 }) {
+  const t = useT();
+  const idioma = useIdioma();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export function ChatPedido({
       const novas = await ler(ultimo.current);
       if (novas.length) {
         if (ultimo.current > 0 && document.visibilityState !== "visible" && novas.some((n) => n.de !== lado)) {
-          if (!document.title.startsWith("💬")) document.title = `💬 Nova mensagem · ${document.title}`;
+          if (!document.title.startsWith("💬")) document.title = `💬 ${t.chat.novaMensagem} · ${document.title}`;
           navigator.vibrate?.(200);
         }
         ultimo.current = novas[novas.length - 1].id;
@@ -52,7 +56,7 @@ export function ChatPedido({
 
   useEffect(() => {
     const voltar = () => {
-      if (document.visibilityState === "visible") document.title = document.title.replace(/^💬 Nova mensagem · /, "");
+      if (document.visibilityState === "visible") document.title = document.title.replace(/^💬 [^·]+ · /, "");
     };
     document.addEventListener("visibilitychange", voltar);
     return () => document.removeEventListener("visibilitychange", voltar);
@@ -74,7 +78,7 @@ export function ChatPedido({
   async function mandar(e: React.FormEvent) {
     e.preventDefault();
     if ((!texto.trim() && !arquivo) || enviando) return;
-    if (arquivo && arquivo.size > 5 * 1024 * 1024) return setErro("Arquivo acima de 5 MB.");
+    if (arquivo && arquivo.size > 5 * 1024 * 1024) return setErro(t.chat.arquivoGrande);
     setEnviando(true);
     setErro(null);
     const f = new FormData();
@@ -82,7 +86,7 @@ export function ChatPedido({
     if (arquivo) f.set("anexo", arquivo);
     const r = await enviar(f);
     setEnviando(false);
-    if (r.erro) return setErro(r.erro);
+    if (r.erro) return setErro(traduzirErro(r.erro, idioma));
     setTexto("");
     setArquivo(null);
     if (campoArquivo.current) campoArquivo.current.value = "";
@@ -108,7 +112,7 @@ export function ChatPedido({
             )}
             {m.texto && <p>{m.texto}</p>}
             <small>
-              {m.de === "LOJA" ? (lado === "LOJA" ? (m.autor ?? "loja") : "Prime Grill") : lado === "CLIENTE" ? "você" : "cliente"} · {hora.format(new Date(m.quando))}
+              {m.de === "LOJA" ? (lado === "LOJA" ? (m.autor ?? "loja") : t.chat.loja) : lado === "CLIENTE" ? t.chat.voce : "cliente"} · {hora.format(new Date(m.quando))}
             </small>
           </div>
         ))}
@@ -116,13 +120,13 @@ export function ChatPedido({
       {arquivo && (
         <div className="chat-anexo-sel">
           {arquivo.type === "application/pdf" ? "📄" : "🖼️"} {arquivo.name}
-          <button type="button" onClick={() => { setArquivo(null); if (campoArquivo.current) campoArquivo.current.value = ""; }} aria-label="Tirar anexo">
+          <button type="button" onClick={() => { setArquivo(null); if (campoArquivo.current) campoArquivo.current.value = ""; }} aria-label={t.chat.tirarAnexo}>
             ×
           </button>
         </div>
       )}
       <form onSubmit={mandar} className="chat-form">
-        <label className="chat-clipe" title="Anexar foto ou PDF">
+        <label className="chat-clipe" title={t.chat.anexar}>
           📎
           <input ref={campoArquivo} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(e) => setArquivo(e.target.files?.[0] ?? null)} hidden />
         </label>
@@ -134,10 +138,10 @@ export function ChatPedido({
           }}
           rows={2}
           maxLength={500}
-          placeholder={lado === "CLIENTE" ? "Escreva sua dúvida…" : "Responder ao cliente…"}
+          placeholder={lado === "CLIENTE" ? t.chat.placeholder : "Responder ao cliente…"}
           aria-label="Mensagem"
         />
-        <button disabled={(!texto.trim() && !arquivo) || enviando}>{enviando ? "…" : "Enviar"}</button>
+        <button disabled={(!texto.trim() && !arquivo) || enviando}>{enviando ? "…" : t.chat.enviar}</button>
       </form>
       {erro && <p className="chat-erro">{erro}</p>}
     </section>

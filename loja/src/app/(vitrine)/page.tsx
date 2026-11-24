@@ -1,3 +1,4 @@
+import { textosAtuais } from "@/lib/idioma";
 import { CadastroOfertas } from "@/components/cadastro-ofertas";
 import { FaixaModoAdicionar } from "@/components/modo-adicionar";
 import { MeusPedidos } from "@/components/app-instalavel";
@@ -9,16 +10,11 @@ import { formatarCelular } from "@/modules/pedidos/whatsapp";
 
 export const dynamic = "force-dynamic";
 
-const SUBTITULOS: Record<string, string> = {
-  bovinos: "Cortes premium",
-  suinos: "Para a brasa",
-  aves: "Temperados e prontos",
-  cordeiro: "Sabor marcante",
-};
-
 export default async function Cardapio() {
-  const [grupos, config] = await Promise.all([catalogoPublico(), configLoja()]);
+  const [grupos, config, { t }] = await Promise.all([catalogoPublico(), configLoja(), textosAtuais()]);
   const sit = situacaoLoja(config, new Date());
+  const textoSit = t.loja.situacao(sit.situacao);
+  const nomeCat = (slug: string, nome: string) => t.categorias[slug] ?? nome;
   const visiveis = grupos.filter((g) => g.itens.length > 0);
   const zap = config.whatsapp.replace(/^55/, "");
 
@@ -34,10 +30,10 @@ export default async function Cardapio() {
             <div className="status">
               <span className={sit.aberta ? "on" : "off"}>
                 <i />
-                {sit.aberta ? "Aberta" : "Fechada"}
+                {sit.aberta ? t.loja.aberta : t.loja.fechada}
               </span>
-              <span>· {sit.texto}</span>
-              <span>· Entrega e retirada</span>
+              <span>· {textoSit}</span>
+              <span>· {t.loja.entregaRetirada}</span>
             </div>
             <MeusPedidos />
             <FaixaModoAdicionar />
@@ -45,11 +41,11 @@ export default async function Cardapio() {
         </div>
       </header>
 
-      <nav className="cats" aria-label="Categorias">
+      <nav className="cats" aria-label={t.loja.categoriasAria}>
         <div className="v-wrap">
           {visiveis.map((g) => (
             <a key={g.categoria.slug} href={`#${g.categoria.slug}`}>
-              {g.categoria.nome}
+              {nomeCat(g.categoria.slug, g.categoria.nome)}
             </a>
           ))}
         </div>
@@ -58,18 +54,18 @@ export default async function Cardapio() {
       <main className="v-wrap">
         {!sit.aberta && (
           <p className="aviso" style={{ marginTop: 18 }}>
-            Estamos fechados agora ({sit.texto.toLowerCase()}). Você pode montar o pedido e enviar; ele será atendido no próximo horário.
+            {t.loja.avisoFechada(textoSit)}
           </p>
         )}
         {visiveis.map((g) => (
           <section key={g.categoria.slug} aria-labelledby={`t-${g.categoria.slug}`}>
             <div className="sec-t" id={g.categoria.slug}>
-              <h2 id={`t-${g.categoria.slug}`}>{g.categoria.nome}</h2>
-              {SUBTITULOS[g.categoria.slug] && <p>{SUBTITULOS[g.categoria.slug]}</p>}
+              <h2 id={`t-${g.categoria.slug}`}>{nomeCat(g.categoria.slug, g.categoria.nome)}</h2>
+              {t.subtitulos[g.categoria.slug] && <p>{t.subtitulos[g.categoria.slug]}</p>}
             </div>
             <div className="grade">
               {g.itens.map((p) => {
-                const disp = textoDisponivel(p);
+                const disp = textoDisponivel(p, t);
                 return (
                   <Link key={p.id} href={`/produto/${p.slug}`} className={`card-p${disp ? "" : " indisp"}`}>
                     {p.fotoUrl ? <img src={p.fotoUrl} alt="" loading="lazy" /> : <span className="sem" />}
@@ -78,9 +74,9 @@ export default async function Cardapio() {
                         {p.nome}
                         {p.pesoNominal ? ` ${p.pesoNominal}` : ""}
                       </h3>
-                      <Preco p={p} />
-                      <span className="aprox">{textoAproximado(p)}</span>
-                      <span className={`disp${disp ? "" : " no"}`}>{disp ?? "Indisponível no momento"}</span>
+                      <Preco p={p} t={t} />
+                      <span className="aprox">{textoAproximado(p, t)}</span>
+                      <span className={`disp${disp ? "" : " no"}`}>{disp ?? t.produto.indisponivel}</span>
                     </div>
                   </Link>
                 );
@@ -91,7 +87,7 @@ export default async function Cardapio() {
         <CadastroOfertas />
         <footer className="rodape-v">
           <span>
-            <b>Prime Grill Paiva</b> · Cortes premium para momentos especiais
+            <b>Prime Grill Paiva</b> · {t.loja.slogan}
           </span>
           <span>
             WhatsApp {formatarCelular(zap)}
@@ -99,7 +95,7 @@ export default async function Cardapio() {
           </span>
           {config.instagram && <span>@{config.instagram}</span>}
           <a href="/privacidade" style={{ textDecoration: "underline" }}>
-            Política de privacidade
+            {t.loja.politica}
           </a>
         </footer>
       </main>

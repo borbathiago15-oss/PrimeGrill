@@ -1,3 +1,4 @@
+import { textosAtuais } from "@/lib/idioma";
 import Link from "next/link";
 import { configLoja } from "@/lib/dados";
 import { formatarCnpj } from "@/modules/loja/cnpj";
@@ -14,7 +15,7 @@ const ATUALIZADA_EM = "23 de novembro de 2026";
  * a identificação da empresa vem do painel (Loja e entregas → Privacidade) e só aparece se estiver preenchida.
  */
 export default async function Privacidade() {
-  const config = await configLoja();
+  const [config, { t }] = await Promise.all([configLoja(), textosAtuais()]);
   const pv = config.privacidade;
   const zap = formatarCelular(config.whatsapp.replace(/^55/, ""));
   const linkZap = `https://wa.me/${config.whatsapp}?text=${encodeURIComponent("Olá! Quero falar sobre os meus dados pessoais (LGPD).")}`;
@@ -22,10 +23,11 @@ export default async function Privacidade() {
   return (
     <main className="politica">
       <Link href="/" className="voltar">
-        ‹ Voltar ao cardápio
+        ‹ {t.produto.voltar}
       </Link>
-      <h1>Política de privacidade</h1>
+      <h1>{t.loja.politica}</h1>
       <p className="atualizada">Atualizada em {ATUALIZADA_EM}</p>
+      {t.privacidade.nota && <p className="aviso">{t.privacidade.nota}</p>}
 
       <section>
         <h2>1. Quem cuida dos seus dados</h2>

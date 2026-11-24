@@ -49,7 +49,10 @@ export async function gravarMensagem(pedidoId: number, de: "CLIENTE" | "LOJA", t
   const previa = texto ? texto.slice(0, 120) : anexo?.tipo === "pdf" ? "📄 PDF enviado" : "🖼️ Foto enviada";
   const { avisarCliente, avisarLoja } = await import("@/lib/push");
   if (de === "CLIENTE") avisarLoja(pedidoId, (x) => ({ titulo: `💬 ${x.cliente} (${x.codigo})`, corpo: previa }));
-  else avisarCliente(pedidoId, (c) => ({ titulo: "💬 Prime Grill respondeu", corpo: `${c}: ${previa}` }));
+  else {
+    const { AVISOS } = await import("@/modules/i18n/avisos");
+    avisarCliente(pedidoId, (c, l) => AVISOS[l].resposta(c, previa));
+  }
   return {};
 }
 

@@ -1,8 +1,11 @@
 import type { ConfigPagamento, FormaPagamento } from "@/db/schema";
 import { BotaoCopiar } from "@/components/copiar";
 import { formatarReais } from "@/modules/dinheiro";
+import { idiomaValido, ROTULO_IDIOMA } from "@/modules/i18n/idiomas";
+import { MENSAGENS_LOJA } from "@/modules/i18n/mensagens-loja";
 import { ROTULO_FORMA, ROTULO_PAGAMENTO } from "@/lib/pagamento";
 import { aceitarPedido, concluirPedido, marcarPago, registrarFormaPeloAtendente, revisarAlteracao } from "./acoes";
+import { CancelarPedido } from "./cancelar";
 import { FormLinkCartao, FormPixMaquininha } from "./link-cartao";
 
 type Pedido = {
@@ -17,34 +20,73 @@ type Pedido = {
   linkCartao: string | null;
   alteracaoCliente: string | null;
   baixaEstoque: boolean;
+  idioma: string;
+  motivoCancelamento: string | null;
+  anonimizadoEm: Date | null;
 };
 
 const PASSOS = ["Aceitar", "Separar e pesar", "Cliente confirma", "Pagamento", "Entregar"];
+const NOME_IDIOMA: Record<string, string> = { en: "inglês", es: "espanhol" };
 
 function wa(celular: string, texto: string) {
   return `https://wa.me/${celular}?text=${encodeURIComponent(texto)}`;
 }
 
+/** Botões para a loja definir a forma de pagamento sem esperar o cliente escolher. */
+function DefinirForma({ id, entrega, destaque }: { id: number; entrega: boolean; destaque?: boolean }) {
+  return (
+    <form action={registrarFormaPeloAtendente} className="linha-botoes">
+      <input type="hidden" name="pedidoId" value={id} />
+      {(["PIX", "CARTAO_LINK", "NA_ENTREGA"] as const).map((f) => (
+        <button key={f} name="forma" value={f} className={`btn ${destaque ? "" : "btn-pq"}`}>
+          {f === "NA_ENTREGA" ? (entrega ? "Na entrega" : "Na retirada") : ROTULO_FORMA[f]}
+        </button>
+      ))}
+    </form>
+  );
+}
+
 /**
  * Fluxo guiado do pedido: mostra só o que o atendente precisa fazer agora.
- * NOVO → aceitar · EM_SEPARACAO → pesar · AGUARDANDO_CLIENTE → mandar o link · CONFIRMADO → cobrar e conferir · entregar.
+ * NOVO → aceitar ou recusar · EM_SEPARACAO → pesar · AGUARDANDO_CLIENTE → mandar o link ou definir a forma ·
+ * CONFIRMADO → cobrar e conferir · entregar. As mensagens prontas saem no idioma do cliente.
  */
 export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, pagamento }: { p: Pedido; pendentes: number; celular: string; link: string; pix: string | null; pixOrigem: "maquininha" | "foto" | "chave" | null; pagamento: ConfigPagamento }) {
+  const idioma = idiomaValido(p.idioma) ? p.idioma : "pt";
+  const M = MENSAGENS_LOJA[idioma];
   const nome = p.clienteNome.split(" ")[0];
   const total = p.totalFinalCentavos !== null ? formatarReais(p.totalFinalCentavos) : "";
   const pago = p.pagamentoStatus === "PAGO";
+  const entrega = p.modo === "ENTREGA";
   const passo =
     p.status === "NOVO" ? 0 : p.status === "EM_SEPARACAO" ? 1 : p.status === "AGUARDANDO_CLIENTE" ? 2 : p.status === "CONFIRMADO" ? (pago ? 4 : 3) : 5;
-  if (p.status === "CANCELADO") return null;
+  const podeCancelar = ["NOVO", "EM_SEPARACAO", "AGUARDANDO_CLIENTE", "CONFIRMADO"].includes(p.status) && !pago;
+
+  if (p.status === "CANCELADO") {
+    if (p.anonimizadoEm) return null;
+    return (
+      <div className="cartao passo-atual cancelado">
+        <div className="passo-corpo">
+          <h2>Pedido cancelado</h2>
+          {p.motivoCancelamento && <p>Motivo enviado ao cliente: {p.motivoCancelamento}</p>}
+          <div className="linha-botoes">
+            <a className="btn" href={wa(celular, M.cancelado(nome, p.codigo, p.motivoCancelamento ?? "—"))} target="_blank" rel="noopener noreferrer">
+              Avisar o cliente no WhatsApp ↗
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   let titulo = "";
   let corpo: React.ReactNode = null;
 
   if (p.status === "NOVO") {
-    titulo = "Pedido novo: aceite para começar";
+    titulo = "Pedido novo: aceite ou recuse";
     corpo = (
       <>
-        <p>Confira os itens abaixo. Ao aceitar, o pedido vai para a separação e o cliente vê no link dele que a loja já está preparando.</p>
+        <p>Confira os itens abaixo. Ao aceitar, o pedido vai para a separação e o cliente vê no link dele que a loja já está preparando. Se não der para atender, recuse com o motivo: o cliente é avisado.</p>
         <form action={aceitarPedido}>
           <input type="hidden" name="pedidoId" value={p.id} />
           <button className="btn btn-pri btn-grande">Aceitar e começar a separar</button>
@@ -75,35 +117,28 @@ export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, paga
     titulo = "Separe e pese as peças";
     corpo = <p>Preencha o peso de cada peça em “Separação e pesagem”, logo abaixo. Ao confirmar, o sistema calcula o valor final e dá baixa no estoque.</p>;
   } else if (p.status === "AGUARDANDO_CLIENTE") {
-    titulo = "Envie o valor final e o link para o cliente";
-    const msg = `Olá, ${nome}! Seu pedido ${p.codigo} da Prime Grill Paiva está separado.\n\n*Total final: ${total}*\n\nConfirme e escolha como pagar (Pix, cartão ou na ${p.modo === "ENTREGA" ? "entrega" : "retirada"}) neste link:\n${link}`;
+    titulo = "Envie o valor final ou defina a forma de pagamento";
     corpo = (
       <>
         <p>
-          O cliente abre o link, vê o peso real de cada peça e escolhe como pagar. Quando ele escolher, este pedido muda sozinho para <b>Confirmado</b>.
+          O cliente abre o link, vê o peso real e escolhe como pagar — o pedido muda sozinho para <b>Confirmado</b>. Se ele já disse como vai pagar (ou para agilizar), defina você mesmo:
         </p>
         <div className="linha-botoes">
-          <a className="btn btn-pri btn-grande" href={wa(celular, msg)} target="_blank" rel="noopener noreferrer">
-            Enviar no WhatsApp ↗
+          <a className="btn btn-pri btn-grande" href={wa(celular, M.valorPronto(nome, p.codigo, total, entrega, link))} target="_blank" rel="noopener noreferrer">
+            Enviar valor e link no WhatsApp ↗
           </a>
           <BotaoCopiar texto={link} rotulo="Copiar link do pedido" className="btn" />
         </div>
-        <details className="manual">
-          <summary>O cliente respondeu direto no WhatsApp? Registrar a forma de pagamento</summary>
-          <form action={registrarFormaPeloAtendente} className="linha-botoes">
-            <input type="hidden" name="pedidoId" value={p.id} />
-            {(["PIX", "CARTAO_LINK", "NA_ENTREGA"] as const).map((f) => (
-              <button key={f} name="forma" value={f} className="btn btn-pq">
-                {ROTULO_FORMA[f]}
-              </button>
-            ))}
-          </form>
-        </details>
+        <div className="definir-forma">
+          <b>Definir a forma de pagamento agora:</b>
+          <DefinirForma id={p.id} entrega={entrega} destaque />
+          <small>O cliente recebe o aviso e o link já mostra como pagar (Pix, link do cartão ou pagamento na {entrega ? "entrega" : "retirada"}).</small>
+        </div>
       </>
     );
   } else if (p.status === "CONFIRMADO" && !pago) {
     const forma = p.formaPagamento;
-    titulo = forma ? `Cobrar: ${ROTULO_FORMA[forma]} · ${total}` : "Registrar a forma de pagamento";
+    titulo = forma ? `Cobrar: ${forma === "NA_ENTREGA" ? (entrega ? "Na entrega" : "Na retirada") : ROTULO_FORMA[forma]} · ${total}` : "Definir a forma de pagamento";
     const informado = p.pagamentoStatus === "INFORMADO";
     const botaoPago = (
       <form action={marcarPago}>
@@ -111,24 +146,15 @@ export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, paga
         <button className={`btn ${informado ? "btn-pri btn-grande" : ""}`}>Pagamento recebido — dar baixa</button>
       </form>
     );
+    const trocarForma = forma && (
+      <details className="manual">
+        <summary>Trocar a forma de pagamento</summary>
+        <DefinirForma id={p.id} entrega={entrega} />
+      </details>
+    );
     if (forma === "PIX") {
       const temPix = pixOrigem !== null;
-      const msg = pix
-        ? `Pedido ${p.codigo} — *${total}*
-
-Pix copia e cola (já com o valor):
-${pix}
-
-Ou abra o QR Code no link do pedido:
-${link}
-
-Assim que pagar, toque em “Já paguei” no link. Obrigado!`
-        : `Pedido ${p.codigo} — *${total}*
-
-O QR Code do Pix está no link do pedido:
-${link}
-
-Assim que pagar, toque em “Já paguei” no link. Obrigado!`;
+      const msg = pix ? M.pixCopiaECola(p.codigo, total, pix, link) : M.pixNoLink(p.codigo, total, link);
       corpo = (
         <>
           {informado && <p className="msg-ok">O cliente avisou que pagou. Confira no extrato do banco e confirme.</p>}
@@ -157,10 +183,10 @@ Assim que pagar, toque em “Já paguei” no link. Obrigado!`;
               <div className="linha-botoes">{botaoPago}</div>
             </>
           )}
+          {trocarForma}
         </>
       );
     } else if (forma === "CARTAO_LINK") {
-      const msg = `Pedido ${p.codigo} — *${total}*\n\nLink para pagar com cartão de crédito:\n${p.linkCartao}\n\nDepois de pagar, toque em “Já paguei” em ${link}`;
       corpo = (
         <>
           {informado && <p className="msg-ok">O cliente avisou que pagou. Confira na maquininha/banco e confirme.</p>}
@@ -168,54 +194,45 @@ Assim que pagar, toque em “Já paguei” no link. Obrigado!`;
           <FormLinkCartao pedidoId={p.id} atual={p.linkCartao} />
           <div className="linha-botoes">
             {p.linkCartao && (
-              <a className="btn btn-grande" href={wa(celular, msg)} target="_blank" rel="noopener noreferrer">
+              <a className="btn btn-grande" href={wa(celular, M.cartao(p.codigo, total, p.linkCartao, link))} target="_blank" rel="noopener noreferrer">
                 Enviar link do cartão no WhatsApp ↗
               </a>
             )}
             {botaoPago}
           </div>
+          {trocarForma}
         </>
       );
     } else if (forma === "NA_ENTREGA") {
-      titulo = `Pagamento na ${p.modo === "ENTREGA" ? "entrega" : "retirada"} · ${total}`;
-      const msg = p.modo === "ENTREGA" ? `Olá, ${nome}! Seu pedido ${p.codigo} saiu para entrega. Total: ${total} (pagamento na entrega). Acompanhe: ${link}` : `Olá, ${nome}! Seu pedido ${p.codigo} está pronto para retirada. Total: ${total}. ${link}`;
+      const msg = entrega ? M.saiuNaEntrega(nome, p.codigo, total, link) : M.prontoRetirada(nome, p.codigo, total, link);
       corpo = (
         <>
           <p>O cliente paga quando receber. Ao entregar e receber, conclua o pedido.</p>
           <div className="linha-botoes">
             <a className="btn" href={wa(celular, msg)} target="_blank" rel="noopener noreferrer">
-              Avisar que {p.modo === "ENTREGA" ? "saiu para entrega" : "está pronto"} ↗
+              Avisar que {entrega ? "saiu para entrega" : "está pronto"} ↗
             </a>
             <form action={concluirPedido}>
               <input type="hidden" name="pedidoId" value={p.id} />
-              <button className="btn btn-pri btn-grande">{p.modo === "ENTREGA" ? "Entregue e recebido" : "Retirado e recebido"}</button>
+              <button className="btn btn-pri btn-grande">{entrega ? "Entregue e recebido" : "Retirado e recebido"}</button>
             </form>
           </div>
+          {trocarForma}
         </>
       );
     } else {
-      corpo = (
-        <form action={registrarFormaPeloAtendente} className="linha-botoes">
-          <input type="hidden" name="pedidoId" value={p.id} />
-          {(["PIX", "CARTAO_LINK", "NA_ENTREGA"] as const).map((f) => (
-            <button key={f} name="forma" value={f} className="btn">
-              {ROTULO_FORMA[f]}
-            </button>
-          ))}
-        </form>
-      );
+      corpo = <DefinirForma id={p.id} entrega={entrega} destaque />;
     }
   } else if (p.status === "CONFIRMADO" && pago) {
-    titulo = p.modo === "ENTREGA" ? "Pago. Envie para entrega" : "Pago. Libere a retirada";
-    const msg = p.modo === "ENTREGA" ? `Olá, ${nome}! Pagamento confirmado. Seu pedido ${p.codigo} saiu para entrega.` : `Olá, ${nome}! Pagamento confirmado. Seu pedido ${p.codigo} está pronto para retirada.`;
+    titulo = entrega ? "Pago. Envie para entrega" : "Pago. Libere a retirada";
     corpo = (
       <div className="linha-botoes">
-        <a className="btn" href={wa(celular, msg)} target="_blank" rel="noopener noreferrer">
+        <a className="btn" href={wa(celular, entrega ? M.pagoSaiu(nome, p.codigo) : M.pagoPronto(nome, p.codigo))} target="_blank" rel="noopener noreferrer">
           Avisar o cliente ↗
         </a>
         <form action={concluirPedido}>
           <input type="hidden" name="pedidoId" value={p.id} />
-          <button className="btn btn-pri btn-grande">{p.modo === "ENTREGA" ? "Marcar como entregue" : "Marcar como retirado"}</button>
+          <button className="btn btn-pri btn-grande">{entrega ? "Marcar como entregue" : "Marcar como retirado"}</button>
         </form>
       </div>
     );
@@ -239,13 +256,19 @@ Assim que pagar, toque em “Já paguei” no link. Obrigado!`;
           <h2>{titulo}</h2>
           {p.status === "CONFIRMADO" && <span className={`chip ${ROTULO_PAGAMENTO[p.pagamentoStatus].cls}`}>{ROTULO_PAGAMENTO[p.pagamentoStatus].texto}</span>}
         </div>
+        {idioma !== "pt" && (
+          <p className="idioma-cliente">
+            {ROTULO_IDIOMA[idioma].bandeira} Cliente fala {NOME_IDIOMA[idioma]}: as mensagens prontas de WhatsApp e os avisos já saem em {NOME_IDIOMA[idioma]}.
+          </p>
+        )}
         {corpo}
+        {podeCancelar && <CancelarPedido pedidoId={p.id} novo={p.status === "NOVO"} />}
         {p.status !== "NOVO" && p.status !== "CONCLUIDO" && (
           <p className="link-cliente">
             Link do cliente: <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
           </p>
         )}
-        {!pagamento.pixChave && p.status === "AGUARDANDO_CLIENTE" && <p className="dica">Se o cliente escolher Pix, você gera o Pix na maquininha com o valor exato e cola no pedido. (Com a chave Pix cadastrada em “Loja e entregas”, isso fica automático.)</p>}
+        {!pagamento.pixChave && p.status === "AGUARDANDO_CLIENTE" && <p className="dica">Se a forma for Pix, você gera o Pix na maquininha com o valor exato e cola no pedido. (Com a chave Pix cadastrada em “Loja e entregas”, isso fica automático.)</p>}
       </div>
     </div>
   );

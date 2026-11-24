@@ -1,3 +1,4 @@
+import { textosAtuais } from "@/lib/idioma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -14,7 +15,7 @@ export default async function Ofertas({ params }: { params: Promise<{ id: string
   if (!/^\d+$/.test(id)) notFound();
   const [f] = await (await db()).select().from(schema.folders).where(eq(schema.folders.id, Number(id)));
   if (!f) notFound();
-  const config = await configLoja();
+  const [config, { t }] = await Promise.all([configLoja(), textosAtuais()]);
   return (
     <div className="ofertas-pub">
       <div className="fo-prev pub">
@@ -36,9 +37,9 @@ export default async function Ofertas({ params }: { params: Promise<{ id: string
         />
       </div>
       <Link href="/" className="btn-ouro centro" style={{ flex: "none", maxWidth: 420, width: "100%" }}>
-        Fazer meu pedido
+        {t.ofertas.fazerPedido}
       </Link>
-      <p style={{ fontSize: 12.5, color: "#A99E90", textAlign: "center" }}>Preços e disponibilidade atualizados no cardápio da loja.</p>
+      <p style={{ fontSize: 12.5, color: "#A99E90", textAlign: "center" }}>{t.ofertas.atualizados}</p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "./idioma";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +15,8 @@ type Prod = { id: number; nome: string; fotoUrl: string | null; tipoVenda: "PECA
 export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, enderecoRetirada }: { produtos: Prod[]; entregaAtiva: boolean; raioKm: number; retiradaAtiva: boolean; enderecoRetirada: string }) {
   const { itens, produtos: resumo, limpar, pronto } = useCarrinho();
   const router = useRouter();
+  const t = useT();
+  const c = t.checkout;
   const [pendente, iniciar] = useTransition();
   const entregaDisponivel = entregaAtiva;
   const [modo, setModo] = useState<"ENTREGA" | "RETIRADA">(entregaDisponivel ? "ENTREGA" : "RETIRADA");
@@ -36,9 +39,9 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
   if (lista.length === 0)
     return (
       <div className="vazio">
-        <p>Seu carrinho está vazio.</p>
+        <p>{c.vazio}</p>
         <Link href="/" className="btn-linha">
-          Ver o cardápio
+          {c.verCardapio}
         </Link>
       </div>
     );
@@ -92,12 +95,12 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
   return (
     <form className="ck" action={enviar}>
       <Link href="/" style={{ color: "var(--osso-2)", fontSize: 14 }}>
-        ‹ Continuar comprando
+        {c.continuar}
       </Link>
-      <h1>Seu pedido</h1>
+      <h1>{c.titulo}</h1>
 
       <section className="bloco">
-        <h2>Itens</h2>
+        <h2>{c.itens}</h2>
         {lista.map((p) => {
           const q = itens[p.id];
           const aprox = p.tipoVenda === "PECA" ? valorAproximadoPeca(p.precoCentavos, p.pesoMedioGramas) : p.precoCentavos;
@@ -106,36 +109,42 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
               {p.fotoUrl && <img src={p.fotoUrl} alt="" />}
               <div className="d">
                 <b>{p.nome}</b>
-                {p.tipoVenda === "PECA" ? `R$ ${formatarValor(p.precoCentavos)}/kg · peça inteira` : `R$ ${formatarValor(p.precoCentavos)} · pacote`}
+                {p.tipoVenda === "PECA" ? c.linhaPeca(formatarValor(p.precoCentavos)) : c.linhaPacote(formatarValor(p.precoCentavos))}
                 <div style={{ marginTop: 8 }}>
                   <SeletorQuantidade id={p.id} nome={p.nome} />
                 </div>
               </div>
               <div className="v num">
-                {aprox !== null ? `${p.tipoVenda === "PECA" ? "≈ " : ""}${formatarReais(aprox * q)}` : "a pesar"}
+                {aprox !== null ? `${p.tipoVenda === "PECA" ? "≈ " : ""}${formatarReais(aprox * q)}` : c.aPesar}
               </div>
             </div>
           );
         })}
         <div className="tot">
           <div className="r">
-            <span>Produtos{pesado ? " (estimado)" : ""}</span>
+            <span>
+              {c.produtos}
+              {pesado ? c.estimado : ""}
+            </span>
             <span className="num">
               {formatarReais(subtotal)}
-              {algumSemPeso ? " + peças a pesar" : ""}
+              {algumSemPeso ? c.pecasAPesar : ""}
             </span>
           </div>
           {modo === "ENTREGA" && (
             <div className="r">
-              <span>Frete{freteOk ? ` · ${freteOk.distancia}` : ""}</span>
-              <span className="num">{freteOk ? formatarReais(valorFrete) : frete?.tipo === "a_combinar" ? "a confirmar" : "informe o CEP"}</span>
+              <span>
+                {c.frete}
+                {freteOk ? ` · ${freteOk.distancia}` : ""}
+              </span>
+              <span className="num">{freteOk ? formatarReais(valorFrete) : frete?.tipo === "a_combinar" ? c.aConfirmar : c.informeCep}</span>
             </div>
           )}
           <div className="r f">
-            <span>Total{pesado ? " estimado" : ""}</span>
+            <span>{pesado ? c.totalEstimado : c.total}</span>
             <span className="preco num">
               {formatarReais(subtotal + valorFrete)}
-              {algumSemPeso ? <small> + peças a pesar</small> : null}
+              {algumSemPeso ? <small>{c.pecasAPesar}</small> : null}
             </span>
           </div>
         </div>
@@ -143,27 +152,27 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
 
       {pesado && (
         <p className="aviso">
-          Peças inteiras são pesadas na separação. Enviamos pelo WhatsApp o peso real e o valor final para você confirmar antes de pagar.
+          {c.avisoPesado}
         </p>
       )}
 
       <section className="bloco">
-        <h2>Como quer receber?</h2>
+        <h2>{c.comoReceber}</h2>
         <div className="opcoes">
           <button type="button" className="opcao" aria-pressed={modo === "ENTREGA"} disabled={!entregaDisponivel} onClick={() => setModo("ENTREGA")}>
-            Entrega
-            <small>{entregaDisponivel ? `frete pela distância · até ${raioKm} km` : "em breve"}</small>
+            {c.entrega}
+            <small>{entregaDisponivel ? c.entregaSub(raioKm) : c.emBreve}</small>
           </button>
           <button type="button" className="opcao" aria-pressed={modo === "RETIRADA"} disabled={!retiradaAtiva} onClick={() => setModo("RETIRADA")}>
-            Retirada na loja
-            <small>{enderecoRetirada || "sem custo"}</small>
+            {c.retirada}
+            <small>{enderecoRetirada || c.semCusto}</small>
           </button>
         </div>
         {modo === "ENTREGA" && (
           <div className="campos">
             <div className="duo">
               <div className="campo">
-                <label htmlFor="cep">CEP</label>
+                <label htmlFor="cep">{c.cep}</label>
                 <input
                   id="cep"
                   inputMode="numeric"
@@ -179,39 +188,39 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
                 />
               </div>
               <div className="campo">
-                <label htmlFor="numero">Número</label>
+                <label htmlFor="numero">{c.numero}</label>
                 <input id="numero" value={numero} onChange={(e) => setNumero(e.target.value)} onBlur={() => frete?.tipo !== "ok" && calcular()} required maxLength={15} />
               </div>
             </div>
-            {calculando && <p className="aviso">Calculando o frete…</p>}
+            {calculando && <p className="aviso">{c.calculando}</p>}
             {!calculando && freteOk && (
               <p className="aviso">
-                Entregamos no seu endereço: <b>{freteOk.distancia}</b> da loja · frete <b>{formatarReais(freteOk.taxaCentavos)}</b>
+                {c.entregamos(freteOk.distancia, formatarReais(freteOk.taxaCentavos))}
                 {freteOk.prazo ? ` · ${freteOk.prazo}` : ""}
-                {freteOk.pedidoMinimoCentavos > 0 ? ` · pedido mínimo ${formatarReais(freteOk.pedidoMinimoCentavos)}` : ""}
+                {freteOk.pedidoMinimoCentavos > 0 ? c.minimo(formatarReais(freteOk.pedidoMinimoCentavos)) : ""}
               </p>
             )}
             {!calculando && frete?.tipo === "fora" && (
               <p className="erro-box">
-                Seu endereço fica a {frete.distancia} da loja, fora da nossa área de entrega (até {frete.raioKm} km). Escolha retirada na loja.
+                {c.fora(frete.distancia, frete.raioKm)}
               </p>
             )}
             {!calculando && frete?.tipo === "a_combinar" && (
-              <p className="aviso">Não conseguimos calcular o frete automaticamente para este CEP. Você pode enviar o pedido: confirmamos o frete pelo WhatsApp.</p>
+              <p className="aviso">{c.aCombinar}</p>
             )}
-            {!calculando && frete?.tipo === "cep_invalido" && <p className="erro-box">CEP não encontrado. Confira o número.</p>}
-            {!calculando && frete?.tipo === "indisponivel" && <p className="erro-box">Entrega indisponível no momento. Escolha retirada na loja.</p>}
+            {!calculando && frete?.tipo === "cep_invalido" && <p className="erro-box">{c.cepInvalido}</p>}
+            {!calculando && frete?.tipo === "indisponivel" && <p className="erro-box">{c.entregaIndisp}</p>}
             <div className="campo">
-              <label htmlFor="endereco">Endereço</label>
+              <label htmlFor="endereco">{c.endereco}</label>
               <input id="endereco" autoComplete="address-line1" value={endereco} onChange={(e) => setEndereco(e.target.value)} required maxLength={120} />
             </div>
             <div className="duo">
               <div className="campo">
-                <label htmlFor="bairro">Bairro</label>
+                <label htmlFor="bairro">{c.bairro}</label>
                 <input id="bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} required maxLength={60} />
               </div>
               <div className="campo">
-                <label htmlFor="complemento">Complemento</label>
+                <label htmlFor="complemento">{c.complemento}</label>
                 <input id="complemento" name="complemento" maxLength={60} />
               </div>
             </div>
@@ -220,38 +229,39 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
       </section>
 
       <section className="bloco">
-        <h2>Seus dados</h2>
+        <h2>{c.seusDados}</h2>
         <div className="campos">
           <div className="campo">
-            <label htmlFor="nome">Nome e sobrenome</label>
+            <label htmlFor="nome">{c.nome}</label>
             <input id="nome" name="nome" autoComplete="name" required minLength={2} maxLength={80} />
           </div>
           <div className="campo">
-            <label htmlFor="celular">Celular com DDD</label>
-            <input id="celular" name="celular" type="tel" autoComplete="tel" inputMode="tel" placeholder="(81) 99999-9999" required />
+            <label htmlFor="celular">{c.celular}</label>
+            <input id="celular" name="celular" type="tel" autoComplete="tel" inputMode="tel" placeholder={c.celularDica ? "+1 305 555 0100" : "(81) 99999-9999"} required />
+            {c.celularDica && <small style={{ color: "#A99E90", fontSize: 12.5 }}>{c.celularDica}</small>}
           </div>
           <div className="campo">
-            <label htmlFor="observacao">Observação (opcional)</label>
-            <textarea id="observacao" name="observacao" maxLength={180} placeholder="Ex.: ponto de referência" />
+            <label htmlFor="observacao">{c.observacao}</label>
+            <textarea id="observacao" name="observacao" maxLength={180} placeholder={c.obsPlaceholder} />
           </div>
           <input className="sr" tabIndex={-1} autoComplete="off" name="site" aria-hidden="true" />
           <label className="check">
             <input type="checkbox" name="consentimento" required />
             <span>
-              Autorizo o uso dos meus dados para processar e entregar este pedido, conforme a{" "}
+              {c.consentimentoAntes}
               <a href="/privacidade" target="_blank" rel="noopener" style={{ color: "var(--dourado)", textDecoration: "underline" }}>
-                política de privacidade
+                {c.consentimentoLink}
               </a>
               .
             </span>
           </label>
           <label className="check">
             <input type="checkbox" name="optin" defaultChecked />
-            <span>Quero receber pelo WhatsApp o peso real, o valor final e o andamento do pedido.</span>
+            <span>{c.optin}</span>
           </label>
           <label className="check">
             <input type="checkbox" name="promocoes" />
-            <span>Quero receber promoções e o folder da semana pelo WhatsApp (opcional; dá para sair quando quiser).</span>
+            <span>{c.promocoes}</span>
           </label>
         </div>
       </section>
@@ -262,7 +272,7 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
         </p>
       )}
       <button className="btn-ouro centro" type="submit" disabled={pendente || calculando || !podeEnviar}>
-        {pendente ? "Enviando…" : "Fazer pedido"}
+        {pendente ? c.enviando : c.fazerPedido}
       </button>
     </form>
   );

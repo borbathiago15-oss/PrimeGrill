@@ -30,6 +30,8 @@ export type OpcoesPedido = {
   freteFlexivel: boolean;
   /** Painel: frete digitado pelo atendente (sobrepõe o cálculo por distância). */
   freteManualCentavos?: number | null;
+  /** Idioma do cliente (loja online); pedidos do painel ficam em português. */
+  idioma?: "pt" | "en" | "es";
 };
 
 export type ResultadoPedido = { ok: true; codigo: string; id: number } | { ok: false; erro: string };
@@ -121,6 +123,7 @@ export async function registrarPedido(d: DadosPedido, o: OpcoesPedido): Promise<
         consentimentoLgpd: true,
         optinWhatsapp: d.optin,
         origem: o.origem,
+        idioma: o.idioma ?? "pt",
       })
       .returning({ id: pedidos.id });
     await tx.insert(pedidoItens).values(calc.itens.map((i) => ({ pedidoId: p.id, ...i })));
