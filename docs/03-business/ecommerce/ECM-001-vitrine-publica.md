@@ -136,3 +136,8 @@ Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o aten
 ## 8.8 Link do pedido se atualiza sozinho
 
 O link do pedido confere a cada 8 s (só com a tela visível), quando o cliente volta para a página e quando chega um aviso no celular se algo mudou (`/pedido/{código}/versao`, impressão digital de status, valor, Pix, link do cartão e itens). Mudou → a página se atualiza sem recarregar. Antes era um recarregamento a cada 25 s que não rodava com a aba em segundo plano.
+
+## 8.9 Ajuda e chat depois do pedido
+
+- Botão **💬 Ajuda** fixo no cardápio: lista os pedidos feitos naquele aparelho com "Falar sobre o pedido …" (abre o chat do pedido) e "Outra dúvida? Chamar no WhatsApp". Sem pedido no aparelho, explica que o chat está no link enviado pelo WhatsApp.
+- O chat continua aberto depois de **concluído ou cancelado** (reclamação, troca, dúvida), com título "Algum problema ou dúvida sobre este pedido?". Só some se os dados do cliente foram apagados (LGPD). A loja vê "💬 Mensagem nova do cliente" na lista e recebe o aviso como antes.

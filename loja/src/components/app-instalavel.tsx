@@ -87,6 +87,49 @@ export function LembrarPedido({ codigo }: { codigo: string }) {
   return null;
 }
 
+/** Botão "Ajuda" no cardápio: leva ao chat de cada pedido feito neste aparelho ou ao WhatsApp da loja. */
+export function AjudaFlutuante({ whatsapp }: { whatsapp: string }) {
+  const [aberto, setAberto] = useState(false);
+  const [lista, setLista] = useState<string[]>([]);
+  const t = useT();
+  useEffect(() => setLista(ler<string[]>(CHAVE_PEDIDOS, [])), []);
+  const zap = whatsapp.replace(/\D/g, "");
+  return (
+    <>
+      {aberto && (
+        <div className="ajuda-painel" role="dialog" aria-label={t.app.ajudaTitulo}>
+          <div className="ajuda-topo">
+            <b>{t.app.ajudaTitulo}</b>
+            <button type="button" className="x" onClick={() => setAberto(false)} aria-label={t.app.fechar}>
+              ×
+            </button>
+          </div>
+          {lista.length > 0 ? (
+            <>
+              <p>{t.app.ajudaPedido}</p>
+              {lista.map((c) => (
+                <Link key={c} href={`/pedido/${c}#chat`} className="btn-linha">
+                  💬 {t.app.falarPedido(c)}
+                </Link>
+              ))}
+            </>
+          ) : (
+            <p>{t.app.ajudaSemPedido}</p>
+          )}
+          {zap && (
+            <a className="btn-linha" href={`https://wa.me/${zap.startsWith("55") ? zap : `55${zap}`}`} target="_blank" rel="noopener noreferrer">
+              {t.app.ajudaWhats}
+            </a>
+          )}
+        </div>
+      )}
+      <button type="button" className="ajuda-botao" onClick={() => setAberto((v) => !v)} aria-expanded={aberto}>
+        💬 {t.app.ajuda}
+      </button>
+    </>
+  );
+}
+
 /** Atalho "Meus pedidos" no cardápio, com os pedidos feitos neste aparelho. */
 export function MeusPedidos() {
   const [lista, setLista] = useState<string[]>([]);

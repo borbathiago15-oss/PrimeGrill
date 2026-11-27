@@ -264,15 +264,17 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
         </Link>
       )}
 
-      {status !== "CANCELADO" && (
+      {!p.anonimizadoEm && (
+        <div id="chat" style={{ scrollMarginTop: 16 }}>
         <ChatPedido
           lado="CLIENTE"
           tema="escuro"
-          titulo={t.chat.titulo}
-          vazio={t.chat.vazio}
+          titulo={status === "CONCLUIDO" || status === "CANCELADO" ? t.chat.tituloPos : t.chat.titulo}
+          vazio={status === "CONCLUIDO" || status === "CANCELADO" ? t.chat.vazioPos : t.chat.vazio}
           ler={lerChatCliente.bind(null, p.codigo)}
           enviar={enviarChatCliente.bind(null, p.codigo)}
         />
+        </div>
       )}
 
       {status === "NOVO" ? (

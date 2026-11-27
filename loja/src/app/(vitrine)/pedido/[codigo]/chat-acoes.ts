@@ -6,7 +6,7 @@ import { gravarDoFormulario, lerMensagens, type MensagemChat } from "@/lib/chat"
 
 async function pedidoPorCodigo(codigo: string) {
   if (!/^PG-[A-Z0-9]{6}$/.test(codigo)) return null;
-  const [p] = await (await db()).select({ id: schema.pedidos.id, status: schema.pedidos.status }).from(schema.pedidos).where(eq(schema.pedidos.codigo, codigo));
+  const [p] = await (await db()).select({ id: schema.pedidos.id, status: schema.pedidos.status, anonimizadoEm: schema.pedidos.anonimizadoEm }).from(schema.pedidos).where(eq(schema.pedidos.codigo, codigo));
   return p ?? null;
 }
 
@@ -20,6 +20,7 @@ export async function lerChatCliente(codigo: string, depoisDe: number): Promise<
 export async function enviarChatCliente(codigo: string, form: FormData): Promise<{ erro?: string }> {
   const p = await pedidoPorCodigo(codigo);
   if (!p) return { erro: "Pedido não encontrado." };
-  if (p.status === "CANCELADO") return { erro: "Este pedido foi cancelado. Fale com a loja pelo WhatsApp." };
+  // Depois de concluído ou cancelado o chat continua aberto (reclamação, dúvida, troca); só some se os dados foram apagados (LGPD).
+  if (p.anonimizadoEm) return { erro: "Pedido não encontrado." };
   return gravarDoFormulario(p.id, "CLIENTE", form, null);
 }

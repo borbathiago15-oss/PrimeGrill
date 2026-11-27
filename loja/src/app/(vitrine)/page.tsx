@@ -1,7 +1,7 @@
 import { textosAtuais } from "@/lib/idioma";
 import { CadastroOfertas } from "@/components/cadastro-ofertas";
 import { FaixaModoAdicionar } from "@/components/modo-adicionar";
-import { MeusPedidos } from "@/components/app-instalavel";
+import { AjudaFlutuante, MeusPedidos } from "@/components/app-instalavel";
 import Link from "next/link";
 import { Preco, textoAproximado, textoDisponivel } from "@/components/preco";
 import { catalogoPublico, configLoja } from "@/lib/dados";
@@ -99,6 +99,7 @@ export default async function Cardapio() {
           </a>
         </footer>
       </main>
+      <AjudaFlutuante whatsapp={config.whatsapp} />
     </>
   );
 }

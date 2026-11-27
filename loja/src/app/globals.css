@@ -373,7 +373,7 @@ tr.link:hover td { background: #FCF8F0; }
 .chat.claro .chat-erro { color: var(--erro); }
 
 /* ---------- App instalável ---------- */
-.instalar { position: fixed; left: 12px; right: 12px; bottom: 84px; z-index: 40; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #1C1916; border: 1px solid var(--dourado-esc); box-shadow: 0 12px 30px rgba(0,0,0,.45); color: var(--osso); }
+.instalar { position: fixed; left: 12px; right: 12px; bottom: 140px; z-index: 40; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: #1C1916; border: 1px solid var(--dourado-esc); box-shadow: 0 12px 30px rgba(0,0,0,.45); color: var(--osso); }
 .instalar img { border-radius: 10px; flex: none; }
 .instalar div { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .instalar small { color: #A99E90; font-size: 12.5px; line-height: 1.35; }
@@ -458,3 +458,11 @@ tr.link:hover td { background: #FCF8F0; }
 .fin-dre td { padding: 9px 18px; } .fin-dre tr.total td { font-weight: 700; border-top: 2px solid var(--borda); }
 .fin-dre td.n { text-align: right; font-variant-numeric: tabular-nums; }
 .vencida { color: var(--erro); font-weight: 700; }
+
+/* ---------- Ajuda no cardápio ---------- */
+.ajuda-botao { position: fixed; z-index: 35; right: 14px; bottom: 84px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--dourado-esc); background: #1C1916; color: var(--dourado); font: inherit; font-weight: 700; font-size: 14px; box-shadow: 0 10px 24px rgba(0,0,0,.45); cursor: pointer; }
+.ajuda-painel { position: fixed; z-index: 45; right: 12px; left: 12px; bottom: 136px; max-width: 380px; margin-left: auto; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 16px; border-radius: 16px; background: #1C1916; border: 1px solid var(--dourado-esc); color: var(--osso); box-shadow: 0 14px 34px rgba(0,0,0,.55); }
+.ajuda-painel p { margin: 0; font-size: 14px; line-height: 1.45; color: #CFC6B8; }
+.ajuda-topo { display: flex; justify-content: space-between; align-items: center; }
+.ajuda-topo .x { background: none; border: none; color: var(--osso-2); font-size: 22px; cursor: pointer; }
+.ajuda-painel .btn-linha { text-align: center; }
