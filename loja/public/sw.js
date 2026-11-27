@@ -4,7 +4,7 @@
  *   ou a página "sem conexão".
  * - Painel (/admin), ações e qualquer envio (POST) nunca passam pelo cache.
  */
-const VERSAO = "pg-v2";
+const VERSAO = "pg-v3";
 const FIXOS = `${VERSAO}-fixos`;
 const PAGINAS = `${VERSAO}-paginas`;
 const OFFLINE = "/offline";
@@ -78,6 +78,8 @@ self.addEventListener("push", (e) => {
         data: { url: d.url || "/" },
       }),
       self.navigator && "setAppBadge" in self.navigator ? self.navigator.setAppBadge(1).catch(() => {}) : Promise.resolve(),
+      // Página do pedido aberta: avisa para ela se atualizar na hora.
+      self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((cs) => cs.forEach((c) => c.postMessage({ tipo: "pedido-atualizado" }))),
     ]),
   );
 });

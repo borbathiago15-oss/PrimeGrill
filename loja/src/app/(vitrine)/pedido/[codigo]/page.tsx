@@ -6,7 +6,9 @@ import { configLoja } from "@/lib/dados";
 import { paraMensagem, pedidoCompleto } from "@/lib/pedidos";
 import { formasAceitas, pixDoPedido } from "@/lib/pagamento";
 import { textosAtuais } from "@/lib/idioma";
-import { AtualizarSozinho, BotaoCopiar } from "@/components/copiar";
+import { BotaoCopiar } from "@/components/copiar";
+import { AcompanharPedido } from "@/components/acompanhar-pedido";
+import { versaoPedido } from "@/lib/versao-pedido";
 import { formatarDistancia } from "@/modules/entrega/frete";
 import { formatarKg, formatarReais, formatarValor } from "@/modules/dinheiro";
 import { linkWhatsapp, mensagemPedido } from "@/modules/pedidos/whatsapp";
@@ -27,7 +29,7 @@ export async function generateMetadata() {
 export default async function PedidoCliente({ params }: { params: Promise<{ codigo: string }> }) {
   const { codigo } = await params;
   if (!/^PG-[A-Z0-9]{6}$/.test(codigo)) notFound();
-  const [dados, config, { idioma, t }] = await Promise.all([pedidoCompleto({ codigo }), configLoja(), textosAtuais()]);
+  const [dados, config, { idioma, t }, versao] = await Promise.all([pedidoCompleto({ codigo }), configLoja(), textosAtuais(), versaoPedido(codigo)]);
   if (!dados) notFound();
   const p = dados.pedido;
   const tp = t.pedido;
@@ -64,7 +66,7 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
   return (
     <div className="ck">
       <LembrarPedido codigo={p.codigo} />
-      {status !== "CONCLUIDO" && status !== "CANCELADO" && <AtualizarSozinho segundos={25} />}
+      {status !== "CONCLUIDO" && status !== "CANCELADO" && versao && <AcompanharPedido codigo={p.codigo} versao={versao} />}
       <div className="placa" style={{ alignSelf: "flex-start" }}>
         <img src="/marca/logo-preta.png" alt="Prime Grill Paiva" style={{ height: 30 }} />
       </div>

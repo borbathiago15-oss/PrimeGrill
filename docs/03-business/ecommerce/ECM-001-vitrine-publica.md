@@ -132,3 +132,7 @@ Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o aten
 - **Forma de pagamento escolhida no pedido:** o checkout pede Pix, cartão (link) ou na entrega/retirada, entre as formas ativas em Loja e entregas. Fica gravada em `pedidos.forma_pagamento` desde o pedido NOVO.
 - **Painel:** a lista mostra "💳 Pix/Cartão/Na entrega"; o aviso de pedido novo no celular também. Nos passos Aceitar e Separar aparece "O cliente quer pagar com …". Depois da pesagem o passo vira "o cliente escolheu …: cobre agora", com um botão (ex.: "Cobrar com Pix agora") que confirma e já mostra o Pix/link do cartão para enviar. Ainda dá para só mandar o valor para o cliente conferir ou usar outra forma.
 - No link do pedido, a forma escolhida já vem marcada quando o cliente confere o valor final.
+
+## 8.8 Link do pedido se atualiza sozinho
+
+O link do pedido confere a cada 8 s (só com a tela visível), quando o cliente volta para a página e quando chega um aviso no celular se algo mudou (`/pedido/{código}/versao`, impressão digital de status, valor, Pix, link do cartão e itens). Mudou → a página se atualiza sem recarregar. Antes era um recarregamento a cada 25 s que não rodava com a aba em segundo plano.
