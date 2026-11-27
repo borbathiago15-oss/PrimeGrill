@@ -90,10 +90,24 @@ export default async function Cardapio() {
             <b>Prime Grill Paiva</b> · {t.loja.slogan}
           </span>
           <span>
-            WhatsApp {formatarCelular(zap)}
-            {config.whatsapp2 ? ` · ${formatarCelular(config.whatsapp2.replace(/^55/, ""))}` : ""}
+            WhatsApp{" "}
+            <a href={`https://wa.me/55${zap.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="link-rodape">
+              {formatarCelular(zap)}
+            </a>
+            {config.whatsapp2 && (
+              <>
+                {" · "}
+                <a href={`https://wa.me/55${config.whatsapp2.replace(/^55/, "").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="link-rodape">
+                  {formatarCelular(config.whatsapp2.replace(/^55/, ""))}
+                </a>
+              </>
+            )}
           </span>
-          {config.instagram && <span>@{config.instagram}</span>}
+          {config.instagram && (
+            <a href={`https://instagram.com/${config.instagram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="link-rodape">
+              @{config.instagram.replace(/^@/, "")}
+            </a>
+          )}
           <a href="/privacidade" style={{ textDecoration: "underline" }}>
             {t.loja.politica}
           </a>

@@ -466,3 +466,6 @@ tr.link:hover td { background: #FCF8F0; }
 .ajuda-topo { display: flex; justify-content: space-between; align-items: center; }
 .ajuda-topo .x { background: none; border: none; color: var(--osso-2); font-size: 22px; cursor: pointer; }
 .ajuda-painel .btn-linha { text-align: center; }
+
+.link-rodape { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.link-rodape:hover { color: var(--dourado); }
