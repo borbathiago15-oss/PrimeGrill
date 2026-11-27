@@ -26,6 +26,10 @@ export const PERMISSOES = {
   promocoes: ["DONO", "GERENTE"],
   /** Studio: folder automático (STU-002). */
   folder: ["DONO", "GERENTE"],
+  /** Financeiro: resumo, contas a pagar, conciliação e taxas (FIN-001). */
+  financeiro: ["DONO", "GERENTE"],
+  /** Caixa da loja: abrir, reforço/retirada e fechar. */
+  caixa: ["DONO", "GERENTE", "ATENDENTE"],
 } as const satisfies Record<string, readonly Papel[]>;
 
 export type Permissao = keyof typeof PERMISSOES;
@@ -36,8 +40,8 @@ export function pode(papel: Papel, p: Permissao): boolean {
 
 export const ROTULO_PAPEL: Record<Papel, { texto: string; descricao: string }> = {
   DONO: { texto: "Dono", descricao: "Tudo, inclusive usuários e chave Pix" },
-  GERENTE: { texto: "Gerente", descricao: "Pedidos, produtos, estoque, notas e entregas" },
-  ATENDENTE: { texto: "Atendente", descricao: "Pedidos, pesagem, cobrança e marcar esgotado" },
+  GERENTE: { texto: "Gerente", descricao: "Pedidos, produtos, estoque, notas, entregas e financeiro" },
+  ATENDENTE: { texto: "Atendente", descricao: "Pedidos, pesagem, cobrança, caixa e marcar esgotado" },
 };
 
 /** Regra de senha do painel. Devolve o motivo quando não serve. */

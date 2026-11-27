@@ -65,7 +65,7 @@
 | §9 | Precificação | (a especificar) | Pendente | 5 |
 | §10 | Vitrine | ECM-001 | In Review | 5 |
 | §11 | Pedidos e pesagem | PES-001 | Approved (C6 aberta) | 6 |
-| §12 | Financeiro | (a especificar) | Pendente | 7 |
+| §12 | Financeiro | FIN-001 | Fase 1 implementada | 7 |
 | §13 | Fiscal | REC-001 (entrada) | Parcial (C12) | 8 |
 | §14 | Logística | ECM-001 (zonas) | Parcial | 8 |
 | §15 | WhatsApp | (a especificar) | Pendente | 9 |

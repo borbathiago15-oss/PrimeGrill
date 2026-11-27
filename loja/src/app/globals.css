@@ -445,3 +445,16 @@ tr.link:hover td { background: #FCF8F0; }
 .banner-peso b { display: block; color: var(--dourado); font-size: 15.5px; margin-bottom: 4px; }
 .banner-peso p { margin: 0; font-size: 14px; line-height: 1.5; color: #E4DCCF; }
 .forma-escolhida { background: #E8F1E8; border: 1px solid #B8D3B8; padding: 8px 12px; border-radius: 6px; }
+
+/* ---------- Financeiro ---------- */
+.recebido-como { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 6px; background: var(--papel-2); }
+.fin-abas { display: flex; gap: 6px; flex-wrap: wrap; }
+.fin-abas a { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--borda); font-size: 13.5px; font-weight: 600; color: var(--texto-2); background: var(--branco); }
+.fin-abas a[aria-current="page"] { background: var(--texto); color: var(--branco); border-color: var(--texto); }
+.fin-filtro { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.fin-filtro label { display: flex; flex-direction: column; font-size: 12.5px; font-weight: 600; color: var(--texto-2); gap: 4px; }
+.fin-filtro input, .fin-filtro select { height: 36px; border: 1px solid var(--borda); border-radius: 6px; padding: 0 10px; background: var(--branco); }
+.kpi.pos b { color: var(--ok); } .kpi.neg b { color: var(--erro); }
+.fin-dre td { padding: 9px 18px; } .fin-dre tr.total td { font-weight: 700; border-top: 2px solid var(--borda); }
+.fin-dre td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.vencida { color: var(--erro); font-weight: 700; }

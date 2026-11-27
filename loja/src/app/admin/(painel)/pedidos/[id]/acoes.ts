@@ -6,7 +6,19 @@ import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, schema } from "@/db";
 import { exigirAdmin } from "@/lib/admin";
-import { registrarMovimento, travarSaldo } from "@/lib/estoque";
+import { registrarMovimento, travarSaldo, type Tx } from "@/lib/estoque";
+import { registrarRecebimentoPedido } from "@/lib/financeiro";
+import { configLoja } from "@/lib/dados";
+import { FORMAS_NA_ENTREGA, type FormaFin } from "@/modules/financeiro/financeiro";
+
+/** Forma que entra no financeiro: a escolhida no pedido ou, no pagamento na entrega, como o cliente pagou de fato. */
+function formaRecebida(formaPedido: string | null, informada: FormDataEntryValue | null): FormaFin | null {
+  const f = String(informada ?? "");
+  if ((FORMAS_NA_ENTREGA as readonly string[]).includes(f)) return f as FormaFin;
+  if (formaPedido === "PIX") return "PIX";
+  if (formaPedido === "CARTAO_LINK") return "CARTAO_LINK";
+  return null;
+}
 import { kgParaGramas, reaisParaCentavos, valorPorPeso } from "@/modules/dinheiro";
 import { custoMedio } from "@/modules/estoque/saldo";
 
@@ -113,7 +125,7 @@ export async function adicionarItensPainel(_: EstadoSeparacao, form: FormData): 
 
 type Status = (typeof pedidos.$inferSelect)["status"];
 
-async function registrar(pedidoId: number, set: Partial<typeof pedidos.$inferInsert>, status: Status, nota: string, autor: string, de: Status[]) {
+async function registrar(pedidoId: number, set: Partial<typeof pedidos.$inferInsert>, status: Status, nota: string, autor: string, de: Status[], depois?: (tx: Tx) => Promise<void>) {
   const banco = await db();
   const ok = await banco.transaction(async (tx) => {
     const r = await tx
@@ -123,6 +135,7 @@ async function registrar(pedidoId: number, set: Partial<typeof pedidos.$inferIns
       .returning({ id: pedidos.id });
     if (!r[0]) return false;
     await tx.insert(pedidoEventos).values({ pedidoId, status, nota, autor });
+    if (depois) await depois(tx);
     return true;
   });
   revalidatePath(`/admin/pedidos/${pedidoId}`);
@@ -174,7 +187,10 @@ export async function salvarLinkCartao(_: EstadoSeparacao, form: FormData): Prom
 export async function marcarPago(form: FormData) {
   const autor = await exigirAdmin();
   const id = Number(form.get("pedidoId"));
-  if (await registrar(id, { pagamentoStatus: "PAGO", pagoEm: new Date() }, "CONFIRMADO", "Pagamento conferido e recebido", autor, ["CONFIRMADO"]))
+  const [ped] = await (await db()).select({ forma: pedidos.formaPagamento }).from(pedidos).where(eq(pedidos.id, id));
+  const forma = formaRecebida(ped?.forma ?? null, form.get("recebidoComo")) ?? "NAO_INFORMADO";
+  const cfg = (await configLoja()).financeiro;
+  if (await registrar(id, { pagamentoStatus: "PAGO", pagoEm: new Date() }, "CONFIRMADO", "Pagamento conferido e recebido", autor, ["CONFIRMADO"], (tx) => registrarRecebimentoPedido(tx, id, forma, autor, cfg)))
     avisarCliente(id, (c, l) => AVISOS[l].pago(c));
 }
 
@@ -186,13 +202,17 @@ export async function concluirPedido(form: FormData) {
   const [p] = await banco.select().from(pedidos).where(eq(pedidos.id, id));
   if (!p || p.status !== "CONFIRMADO") return;
   const recebeAgora = p.pagamentoStatus !== "PAGO";
+  const forma = recebeAgora ? (formaRecebida(p.formaPagamento === "NA_ENTREGA" ? null : p.formaPagamento, form.get("recebidoComo")) ?? "NAO_INFORMADO") : null;
+  const { ROTULO_FORMA_FIN } = await import("@/modules/financeiro/financeiro");
+  const cfg = (await configLoja()).financeiro;
   await registrar(
     id,
     { status: "CONCLUIDO", ...(recebeAgora ? { pagamentoStatus: "PAGO" as const, pagoEm: new Date() } : {}) },
     "CONCLUIDO",
-    `${p.modo === "ENTREGA" ? "Entregue" : "Retirado"}${recebeAgora ? " · pagamento recebido na entrega" : ""}`,
+    `${p.modo === "ENTREGA" ? "Entregue" : "Retirado"}${forma ? ` · pagamento recebido: ${ROTULO_FORMA_FIN[forma]}` : ""}`,
     autor,
     ["CONFIRMADO"],
+    forma ? (tx) => registrarRecebimentoPedido(tx, id, forma, autor, cfg) : undefined,
   );
   avisarCliente(id, (c, l) => AVISOS[l].concluido(c, p.modo === "ENTREGA"));
 }

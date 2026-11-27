@@ -248,16 +248,30 @@ export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, paga
       const msg = entrega ? M.saiuNaEntrega(nome, p.codigo, total, link) : M.prontoRetirada(nome, p.codigo, total, link);
       corpo = (
         <>
-          <p>O cliente paga quando receber. Ao entregar e receber, conclua o pedido.</p>
+          <p>O cliente paga quando receber. Ao {entrega ? "entregar" : "liberar a retirada"}, marque como ele pagou: o valor entra no financeiro (dinheiro vai para o caixa aberto).</p>
           <div className="linha-botoes">
             <a className="btn" href={wa(celular, msg)} target="_blank" rel="noopener noreferrer">
               Avisar que {entrega ? "saiu para entrega" : "está pronto"} ↗
             </a>
-            <form action={concluirPedido}>
-              <input type="hidden" name="pedidoId" value={p.id} />
-              <button className="btn btn-pri btn-grande">{entrega ? "Entregue e recebido" : "Retirado e recebido"}</button>
-            </form>
           </div>
+          <form action={concluirPedido} className="recebido-como">
+            <input type="hidden" name="pedidoId" value={p.id} />
+            <b>{entrega ? "Entregue" : "Retirado"} e recebido em:</b>
+            <div className="linha-botoes">
+              {(
+                [
+                  ["DINHEIRO", "💵 Dinheiro"],
+                  ["PIX", "Pix"],
+                  ["CARTAO_DEBITO", "Débito"],
+                  ["CARTAO_CREDITO", "Crédito"],
+                ] as const
+              ).map(([v, r]) => (
+                <button key={v} name="recebidoComo" value={v} className="btn btn-pri">
+                  {r}
+                </button>
+              ))}
+            </div>
+          </form>
           {trocarForma}
         </>
       );

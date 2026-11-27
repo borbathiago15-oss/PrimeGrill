@@ -1,5 +1,6 @@
 import { boolean, doublePrecision, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
 import type { ConfigEntrega } from "@/modules/entrega/frete";
+import type { ConfigFinanceiro } from "@/modules/financeiro/financeiro";
 
 /** Tipo de venda (CAT-001). Hoje apenas peça inteira (R$/kg, pesada na saída) e pacote (preço fixo). */
 export const TIPOS_VENDA = ["PECA", "PACOTE"] as const;
@@ -78,6 +79,8 @@ export type ConfigLoja = {
   instagram?: string;
   /** Identificação da empresa e do encarregado (LGPD), mostrada na política de privacidade. */
   privacidade?: ConfigPrivacidade;
+  /** Taxas da maquininha/banco e prazos de recebimento (FIN-001). */
+  financeiro?: ConfigFinanceiro;
 };
 
 export type ConfigPrivacidade = { razaoSocial: string; cnpj: string; encarregado: string; email: string };
@@ -452,4 +455,70 @@ export const campanhaEnvios = pgTable(
     autor: text("autor").notNull(),
   },
   (t) => [uniqueIndex("campanha_envio_uq").on(t.campanhaId, t.inscritoId)],
+);
+
+/* ---------------- Financeiro (FIN-001) ---------------- */
+
+/** Caixa da loja (gaveta de dinheiro): abre com troco, fecha com a contagem. */
+export const caixas = pgTable("caixas", {
+  id: serial("id").primaryKey(),
+  abertoEm: timestamp("aberto_em", { withTimezone: true }).notNull().defaultNow(),
+  abertoPor: text("aberto_por").notNull(),
+  trocoCentavos: integer("troco_centavos").notNull(),
+  fechadoEm: timestamp("fechado_em", { withTimezone: true }),
+  fechadoPor: text("fechado_por"),
+  esperadoCentavos: integer("esperado_centavos"),
+  contadoCentavos: integer("contado_centavos"),
+  observacao: text("observacao").notNull().default(""),
+});
+
+/** Reforço (suprimento) ou retirada (sangria) de dinheiro da gaveta. */
+export const caixaMovimentos = pgTable("caixa_movimentos", {
+  id: serial("id").primaryKey(),
+  caixaId: integer("caixa_id").notNull().references(() => caixas.id),
+  tipo: text("tipo").$type<"SUPRIMENTO" | "SANGRIA">().notNull(),
+  valorCentavos: integer("valor_centavos").notNull(),
+  motivo: text("motivo").notNull().default(""),
+  autor: text("autor").notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Contas a receber e a pagar. Receita de pedido nasce quando a loja dá baixa no pagamento;
+ * despesa é lançada à mão ou a partir de uma nota de entrada. Datas em "AAAA-MM-DD" (Recife).
+ */
+export const lancamentos = pgTable(
+  "lancamentos",
+  {
+    id: serial("id").primaryKey(),
+    tipo: text("tipo").$type<"RECEITA" | "DESPESA">().notNull(),
+    categoria: text("categoria").notNull(),
+    descricao: text("descricao").notNull(),
+    valorCentavos: integer("valor_centavos").notNull(),
+    /** Taxa da maquininha/banco (só receitas): o líquido é valor − taxa. */
+    taxaCentavos: integer("taxa_centavos").notNull().default(0),
+    forma: text("forma"),
+    /** ABERTO (a pagar/receber) → QUITADO; CANCELADO não conta. */
+    status: text("status").$type<"ABERTO" | "QUITADO" | "CANCELADO">().notNull().default("ABERTO"),
+    vencimento: text("vencimento"),
+    quitadoEm: text("quitado_em"),
+    /** Quando o dinheiro deve cair na conta (cartão). */
+    previstoEm: text("previsto_em"),
+    /** Conferido no extrato do banco/maquininha. */
+    conciliadoEm: timestamp("conciliado_em", { withTimezone: true }),
+    conciliadoPor: text("conciliado_por"),
+    pedidoId: integer("pedido_id").references(() => pedidos.id),
+    notaId: integer("nota_id").references(() => notasEntrada.id),
+    fornecedorId: integer("fornecedor_id").references(() => fornecedores.id),
+    caixaId: integer("caixa_id").references(() => caixas.id),
+    observacao: text("observacao").notNull().default(""),
+    autor: text("autor").notNull(),
+    criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("lanc_quitado_idx").on(t.quitadoEm),
+    index("lanc_vencimento_idx").on(t.status, t.vencimento),
+    uniqueIndex("lanc_pedido_uq").on(t.pedidoId),
+    uniqueIndex("lanc_nota_uq").on(t.notaId),
+  ],
 );

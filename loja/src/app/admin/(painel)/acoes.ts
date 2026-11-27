@@ -38,6 +38,10 @@ export async function mudarStatus(form: FormData) {
   await banco.transaction(async (tx) => {
     await tx.update(pedidos).set({ status, atualizadoEm: new Date(), ...(status === "CANCELADO" && nota ? { motivoCancelamento: nota } : {}) }).where(eq(pedidos.id, id));
     await tx.insert(pedidoEventos).values({ pedidoId: id, status, nota, autor });
+    if (status === "CANCELADO") {
+      const { cancelarRecebimentoPedido } = await import("@/lib/financeiro");
+      await cancelarRecebimentoPedido(tx, id, autor);
+    }
   });
   if (status === "CANCELADO") {
     const { avisarCliente } = await import("@/lib/push");

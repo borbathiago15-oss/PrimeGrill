@@ -12,6 +12,8 @@ const ITENS: { href: string; texto: string; exato?: boolean; perm: Permissao }[]
   { href: "/admin/clientes", texto: "Clientes", perm: "clientesVer" },
   { href: "/admin/estoque", texto: "Estoque", perm: "estoqueVer" },
   { href: "/admin/notas", texto: "Notas de entrada", perm: "notas" },
+  { href: "/admin/financeiro", texto: "Financeiro", perm: "financeiro" },
+  { href: "/admin/financeiro/caixa", texto: "Caixa", perm: "caixa" },
   { href: "/admin/configuracoes", texto: "Loja e entregas", perm: "lojaEntregas" },
   { href: "/admin/folder", texto: "Folder (PDF e imagem)", perm: "folder" },
   { href: "/admin/promocoes", texto: "Promoções", perm: "promocoes" },
@@ -24,7 +26,7 @@ export function Menu({ papel }: { papel: Papel }) {
     <>
       <div className="grupo">Loja online</div>
       {ITENS.filter((i) => pode(papel, i.perm)).map((i) => {
-        const ativo = i.exato ? caminho === i.href || caminho.startsWith("/admin/pedidos") : caminho.startsWith(i.href);
+        const ativo = i.exato ? caminho === i.href || caminho.startsWith("/admin/pedidos") : caminho.startsWith(i.href) && !(i.href === "/admin/financeiro" && caminho.startsWith("/admin/financeiro/caixa"));
         return (
           <Link key={i.href} href={i.href} aria-current={ativo ? "page" : undefined}>
             {i.texto}

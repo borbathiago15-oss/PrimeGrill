@@ -100,3 +100,4 @@
 | 2026-11-23 | Política de privacidade pública (/privacidade) e cadastro de promoções com consentimento, campanhas com folder e descadastro (LGPD-001 §4–5) |
 | 2026-11-24 | Loja em PT/EN/ES com celular estrangeiro e avisos/mensagens no idioma do cliente; recusar/cancelar com motivo e loja definindo a forma de pagamento (ECM-001 §8.6) |
 | 2026-11-27 | Banner de peso variável no checkout e forma de pagamento escolhida no pedido, com cobrança imediata no painel (ECM-001 §8.7) |
+| 2026-11-27 | FIN-001 Financeiro: caixa, recebimentos e conciliação de Pix/cartão com taxas, contas a pagar (inclui notas de entrada), resumo com CMV e planilha para o contador |
