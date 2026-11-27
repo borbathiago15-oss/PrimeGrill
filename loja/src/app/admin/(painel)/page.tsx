@@ -105,7 +105,17 @@ export default async function Pedidos({ searchParams }: { searchParams: Promise<
                         </>
                       )}
                     </td>
-                    <td>{p.modo === "ENTREGA" ? `Entrega${p.bairro ? ` · ${p.bairro}` : ""}` : "Retirada"}</td>
+                    <td>
+                      {p.modo === "ENTREGA" ? `Entrega${p.bairro ? ` · ${p.bairro}` : ""}` : "Retirada"}
+                      {p.formaPagamento && (
+                        <>
+                          <br />
+                          <small style={{ color: "var(--texto-2)" }}>
+                            💳 {p.formaPagamento === "PIX" ? "Pix" : p.formaPagamento === "CARTAO_LINK" ? "Cartão (link)" : p.modo === "ENTREGA" ? "Na entrega" : "Na retirada"}
+                          </small>
+                        </>
+                      )}
+                    </td>
                     <td className="n">
                       {p.totalFinalCentavos !== null ? (
                         <b>{formatarReais(p.totalFinalCentavos)}</b>

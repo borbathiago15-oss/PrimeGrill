@@ -144,7 +144,8 @@ export async function registrarFormaPeloAtendente(form: FormData) {
   const forma = String(form.get("forma"));
   if (forma !== "PIX" && forma !== "CARTAO_LINK" && forma !== "NA_ENTREGA") return;
   const id = Number(form.get("pedidoId"));
-  const ok = await registrar(id, { status: "CONFIRMADO", formaPagamento: forma }, "CONFIRMADO", "Forma de pagamento definida pela loja", autor, ["AGUARDANDO_CLIENTE", "CONFIRMADO"]);
+  const nota = form.get("doCliente") ? "Cobrança liberada com a forma que o cliente escolheu no pedido" : "Forma de pagamento definida pela loja";
+  const ok = await registrar(id, { status: "CONFIRMADO", formaPagamento: forma }, "CONFIRMADO", nota, autor, ["AGUARDANDO_CLIENTE", "CONFIRMADO"]);
   if (ok) {
     const { MENSAGENS_LOJA } = await import("@/modules/i18n/mensagens-loja");
     const [ped] = await (await db()).select({ modo: pedidos.modo }).from(pedidos).where(eq(pedidos.id, id));

@@ -125,3 +125,10 @@ Alternativa manual (PG-P-001): se o cliente responder direto no WhatsApp, o aten
 - Textos ficam em `src/modules/i18n/` (`textos.ts`, `avisos.ts`, `mensagens-loja.ts`); um teste garante que os três idiomas têm as mesmas chaves.
 - **Recusar/cancelar no painel:** botão em todas as etapas até o pagamento, com motivos prontos (esgotado, fora da área, sem horário, duplicado, a pedido do cliente, sem pagamento) ou texto livre. O estoque volta sozinho, o cliente vê o motivo no link e recebe aviso. Pedido já pago continua só no ajuste manual do gerente.
 - **Loja define a forma de pagamento:** no passo "Cliente confirma", botões Pix / Cartão / Na entrega–retirada para definir sem esperar o cliente; também dá para trocar a forma depois. O cliente recebe o aviso e o link mostra como pagar.
+
+## 8.7 Aviso de peso variável e forma de pagamento no checkout
+
+- **Banner no checkout** (quando há peça vendida por kg): os produtos por kg variam de peso, peça a peça; a loja separa e pesa o pedido e o cliente recebe o peso real e o valor final ao fim da separação, e só então confirma e paga. Em PT/EN/ES.
+- **Forma de pagamento escolhida no pedido:** o checkout pede Pix, cartão (link) ou na entrega/retirada, entre as formas ativas em Loja e entregas. Fica gravada em `pedidos.forma_pagamento` desde o pedido NOVO.
+- **Painel:** a lista mostra "💳 Pix/Cartão/Na entrega"; o aviso de pedido novo no celular também. Nos passos Aceitar e Separar aparece "O cliente quer pagar com …". Depois da pesagem o passo vira "o cliente escolheu …: cobre agora", com um botão (ex.: "Cobrar com Pix agora") que confirma e já mostra o Pix/link do cartão para enviar. Ainda dá para só mandar o valor para o cliente conferir ou usar outra forma.
+- No link do pedido, a forma escolhida já vem marcada quando o cliente confere o valor final.

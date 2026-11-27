@@ -438,3 +438,10 @@ tr.link:hover td { background: #FCF8F0; }
 .definir-forma small { color: var(--texto-2); }
 .cancelar-pedido summary { color: var(--erro) !important; }
 .passo-atual.cancelado { border-color: var(--erro); }
+
+/* ---------- Aviso de peso variável e forma escolhida ---------- */
+.banner-peso { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: linear-gradient(135deg, rgba(201,162,92,.18), rgba(201,162,92,.06)); border: 1px solid var(--dourado); color: var(--osso, #F3EDE4); }
+.banner-peso .ic { font-size: 26px; line-height: 1; }
+.banner-peso b { display: block; color: var(--dourado); font-size: 15.5px; margin-bottom: 4px; }
+.banner-peso p { margin: 0; font-size: 14px; line-height: 1.5; color: #E4DCCF; }
+.forma-escolhida { background: #E8F1E8; border: 1px solid #B8D3B8; padding: 8px 12px; border-radius: 6px; }

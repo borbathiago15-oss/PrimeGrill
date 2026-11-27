@@ -167,7 +167,7 @@ export default async function PedidoCliente({ params }: { params: Promise<{ codi
       {status === "AGUARDANDO_CLIENTE" && tp.turista && opcoes.some((o) => o.forma === "CARTAO_LINK") && <p className="aviso">{tp.turista}</p>}
       {status === "AGUARDANDO_CLIENTE" &&
         (opcoes.length ? (
-          <EscolherPagamento codigo={p.codigo} opcoes={opcoes} />
+          <EscolherPagamento codigo={p.codigo} opcoes={opcoes} inicial={p.formaPagamento} />
         ) : (
           <a className="btn-ouro centro" href={falarLoja} target="_blank" rel="noopener noreferrer">
             {tp.confirmarWhats}

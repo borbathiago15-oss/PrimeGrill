@@ -99,3 +99,4 @@
 | 2026-11-23 | LGPD-001: tela Clientes e exclusão de dados pessoais a pedido do titular (só Dono), com anonimização dos pedidos e registro da exclusão |
 | 2026-11-23 | Política de privacidade pública (/privacidade) e cadastro de promoções com consentimento, campanhas com folder e descadastro (LGPD-001 §4–5) |
 | 2026-11-24 | Loja em PT/EN/ES com celular estrangeiro e avisos/mensagens no idioma do cliente; recusar/cancelar com motivo e loja definindo a forma de pagamento (ECM-001 §8.6) |
+| 2026-11-27 | Banner de peso variável no checkout e forma de pagamento escolhida no pedido, com cobrança imediata no painel (ECM-001 §8.7) |

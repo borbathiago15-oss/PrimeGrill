@@ -22,6 +22,7 @@ const entrada = z.object({
   optin: z.boolean(),
   promocoes: z.boolean().optional().default(false),
   site: z.string().max(0).optional(), // campo-isca contra robôs
+  formaPagamento: z.enum(["PIX", "CARTAO_LINK", "NA_ENTREGA"]).optional(),
 });
 
 export type ResultadoPedido = { ok: true; codigo: string } | { ok: false; erro: string };
@@ -40,10 +41,16 @@ async function criarPedidoPt(dados: unknown, idioma: Idioma): Promise<ResultadoP
   const celular = normalizarCelular(d.celular);
   if (!celular) return { ok: false, erro: "Informe um celular com DDD, ex.: (81) 99999-9999." };
   if (d.modo === "ENTREGA" && (!d.endereco || !d.numero)) return { ok: false, erro: "Informe endereço e número para entrega." };
+  const { configLoja } = await import("@/lib/dados");
+  const { formasAceitas, ROTULO_FORMA } = await import("@/lib/pagamento");
+  const aceitas = formasAceitas((await configLoja()).pagamento);
+  if (aceitas.length && !d.formaPagamento) return { ok: false, erro: "Escolha uma forma de pagamento." };
+  if (d.formaPagamento && !aceitas.includes(d.formaPagamento)) return { ok: false, erro: "Essa forma de pagamento não está disponível." };
+  const formaTexto = d.formaPagamento ? (d.formaPagamento === "NA_ENTREGA" ? (d.modo === "ENTREGA" ? "Na entrega" : "Na retirada") : ROTULO_FORMA[d.formaPagamento]) : null;
 
   const r = await registrarPedido(
     { ...d, celular },
-    { origem: "LOJA_ONLINE", autor: "cliente", nota: "Pedido feito pela loja online", freteFlexivel: false, idioma },
+    { origem: "LOJA_ONLINE", autor: "cliente", nota: formaTexto ? `Pedido feito pela loja online · quer pagar: ${formaTexto}` : "Pedido feito pela loja online", freteFlexivel: false, idioma },
   );
   // Consentimento separado para promoções (LGPD): só grava se o cliente marcou.
   if (r.ok && d.promocoes) {

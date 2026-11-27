@@ -10,9 +10,10 @@ import { consultarFrete, type RespostaFrete } from "@/app/(vitrine)/pedido/frete
 import { formatarReais, formatarValor } from "@/modules/dinheiro";
 import { valorAproximadoPeca } from "@/modules/pedidos/calculo";
 
+type OpcaoForma = { forma: "PIX" | "CARTAO_LINK" | "NA_ENTREGA"; titulo: string; detalhe: string };
 type Prod = { id: number; nome: string; fotoUrl: string | null; tipoVenda: "PECA" | "PACOTE"; precoCentavos: number; pesoMedioGramas: number | null };
 
-export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, enderecoRetirada }: { produtos: Prod[]; entregaAtiva: boolean; raioKm: number; retiradaAtiva: boolean; enderecoRetirada: string }) {
+export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, enderecoRetirada, formas }: { produtos: Prod[]; entregaAtiva: boolean; raioKm: number; retiradaAtiva: boolean; enderecoRetirada: string; formas: OpcaoForma[] }) {
   const { itens, produtos: resumo, limpar, pronto } = useCarrinho();
   const router = useRouter();
   const t = useT();
@@ -27,12 +28,13 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
   const [erro, setErro] = useState<string | null>(null);
   const [cep, setCep] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [forma, setForma] = useState<string>(formas.length === 1 ? formas[0].forma : "");
 
   const lista = produtos.filter((p) => itens[p.id]);
   const { total: subtotal, pesado } = resumoCarrinho(itens, resumo);
   const freteOk = frete?.tipo === "ok" ? frete : null;
   const valorFrete = modo === "ENTREGA" && freteOk ? freteOk.taxaCentavos : 0;
-  const podeEnviar = modo === "RETIRADA" || frete?.tipo === "ok" || frete?.tipo === "a_combinar";
+  const podeEnviar = (modo === "RETIRADA" || frete?.tipo === "ok" || frete?.tipo === "a_combinar") && (formas.length === 0 || forma !== "");
   const algumSemPeso = lista.some((p) => p.tipoVenda === "PECA" && !p.pesoMedioGramas);
 
   if (!pronto) return <div className="ck" />;
@@ -80,6 +82,7 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
       optin: form.get("optin") === "on",
       promocoes: form.get("promocoes") === "on",
       site: String(form.get("site") ?? ""),
+      formaPagamento: forma || undefined,
     };
     iniciar(async () => {
       const r = await criarPedido(dados);
@@ -150,10 +153,15 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
         </div>
       </section>
 
+
       {pesado && (
-        <p className="aviso">
-          {c.avisoPesado}
-        </p>
+        <div className="banner-peso" role="note">
+          <span className="ic" aria-hidden="true">⚖️</span>
+          <div>
+            <b>{c.bannerPesoTitulo}</b>
+            <p>{c.avisoPesado}</p>
+          </div>
+        </div>
       )}
 
       <section className="bloco">
@@ -265,6 +273,24 @@ export function Checkout({ produtos, entregaAtiva, raioKm, retiradaAtiva, endere
           </label>
         </div>
       </section>
+
+      {formas.length > 0 && (
+        <section className="bloco">
+          <h2>{c.pagamento}</h2>
+          <div className="formas">
+            {formas.map((o) => (
+              <label key={o.forma} className={`forma ${forma === o.forma ? "on" : ""}`}>
+                <input type="radio" name="formaPagamento" value={o.forma} checked={forma === o.forma} onChange={() => setForma(o.forma)} required />
+                <span>
+                  <b>{o.titulo}</b>
+                  <small>{o.detalhe}</small>
+                </span>
+              </label>
+            ))}
+          </div>
+          <p className="aviso" style={{ margin: "0 16px 16px" }}>{pesado ? c.pagamentoNota : c.pagamentoNotaPacote}</p>
+        </section>
+      )}
 
       {erro && (
         <p className="erro-box" role="alert">

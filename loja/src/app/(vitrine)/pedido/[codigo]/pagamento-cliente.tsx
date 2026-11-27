@@ -8,11 +8,11 @@ import { alterarPedidoCliente, avisarPagamento, escolherPagamento, type EstadoCl
 type Opcao = { forma: string; titulo: string; detalhe: string };
 
 /** Cliente confirma o valor final e escolhe como vai pagar. */
-export function EscolherPagamento({ codigo, opcoes }: { codigo: string; opcoes: Opcao[] }) {
+export function EscolherPagamento({ codigo, opcoes, inicial }: { codigo: string; opcoes: Opcao[]; inicial?: string | null }) {
   const [estado, acao, enviando] = useActionState<EstadoCliente, FormData>(escolherPagamento, {});
   const t = useT();
   const idioma = useIdioma();
-  const [forma, setForma] = useState(opcoes.length === 1 ? opcoes[0].forma : "");
+  const [forma, setForma] = useState(opcoes.length === 1 ? opcoes[0].forma : opcoes.some((o) => o.forma === inicial) ? (inicial as string) : "");
   return (
     <form action={acao} className="bloco">
       <h2>{t.formas.titulo}</h2>

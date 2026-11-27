@@ -20,6 +20,8 @@ export type DadosPedido = {
   bairro: string;
   observacao: string;
   optin: boolean;
+  /** Forma que o cliente escolheu no checkout (a loja já sabe como cobrar). */
+  formaPagamento?: "PIX" | "CARTAO_LINK" | "NA_ENTREGA";
 };
 
 export type OpcoesPedido = {
@@ -124,6 +126,7 @@ export async function registrarPedido(d: DadosPedido, o: OpcoesPedido): Promise<
         optinWhatsapp: d.optin,
         origem: o.origem,
         idioma: o.idioma ?? "pt",
+        formaPagamento: d.formaPagamento ?? null,
       })
       .returning({ id: pedidos.id });
     await tx.insert(pedidoItens).values(calc.itens.map((i) => ({ pedidoId: p.id, ...i })));
@@ -133,7 +136,7 @@ export async function registrarPedido(d: DadosPedido, o: OpcoesPedido): Promise<
   if (typeof r === "string") return { ok: false, erro: `${r} acabou de esgotar. Ajuste os itens.` };
   if (o.origem === "LOJA_ONLINE") {
     const { avisarLoja } = await import("@/lib/push");
-    avisarLoja(r, (x) => ({ titulo: `Novo pedido ${x.codigo}`, corpo: `${x.cliente} · ${d.modo === "ENTREGA" ? "entrega" : "retirada"}. Toque para aceitar.` }));
+    avisarLoja(r, (x) => ({ titulo: `Novo pedido ${x.codigo}`, corpo: `${x.cliente} · ${d.modo === "ENTREGA" ? "entrega" : "retirada"}${d.formaPagamento ? ` · ${d.formaPagamento === "PIX" ? "Pix" : d.formaPagamento === "CARTAO_LINK" ? "cartão (link)" : "paga na " + (d.modo === "ENTREGA" ? "entrega" : "retirada")}` : ""}. Toque para aceitar.` }));
   }
   return { ok: true, codigo, id: r };
 }

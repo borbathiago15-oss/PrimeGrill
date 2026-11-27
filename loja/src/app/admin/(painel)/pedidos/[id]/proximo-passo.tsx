@@ -33,11 +33,11 @@ function wa(celular: string, texto: string) {
 }
 
 /** Botões para a loja definir a forma de pagamento sem esperar o cliente escolher. */
-function DefinirForma({ id, entrega, destaque }: { id: number; entrega: boolean; destaque?: boolean }) {
+function DefinirForma({ id, entrega, destaque, exceto }: { id: number; entrega: boolean; destaque?: boolean; exceto?: FormaPagamento | null }) {
   return (
     <form action={registrarFormaPeloAtendente} className="linha-botoes">
       <input type="hidden" name="pedidoId" value={id} />
-      {(["PIX", "CARTAO_LINK", "NA_ENTREGA"] as const).map((f) => (
+      {(["PIX", "CARTAO_LINK", "NA_ENTREGA"] as const).filter((f) => f !== exceto).map((f) => (
         <button key={f} name="forma" value={f} className={`btn ${destaque ? "" : "btn-pq"}`}>
           {f === "NA_ENTREGA" ? (entrega ? "Na entrega" : "Na retirada") : ROTULO_FORMA[f]}
         </button>
@@ -61,6 +61,14 @@ export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, paga
   const passo =
     p.status === "NOVO" ? 0 : p.status === "EM_SEPARACAO" ? 1 : p.status === "AGUARDANDO_CLIENTE" ? 2 : p.status === "CONFIRMADO" ? (pago ? 4 : 3) : 5;
   const podeCancelar = ["NOVO", "EM_SEPARACAO", "AGUARDANDO_CLIENTE", "CONFIRMADO"].includes(p.status) && !pago;
+  const nomeForma = (f: FormaPagamento) => (f === "NA_ENTREGA" ? (entrega ? "Na entrega" : "Na retirada") : ROTULO_FORMA[f]);
+  const escolhida = p.formaPagamento;
+  const avisoForma = escolhida && ["NOVO", "EM_SEPARACAO"].includes(p.status) && (
+    <p className="forma-escolhida">
+      💳 O cliente quer pagar com <b>{nomeForma(escolhida)}</b>.{" "}
+      {escolhida === "PIX" ? "Ao terminar a pesagem, o Pix já pode ser enviado." : escolhida === "CARTAO_LINK" ? "Ao terminar a pesagem, gere o link do cartão com o valor final." : "Ele paga ao receber."}
+    </p>
+  );
 
   if (p.status === "CANCELADO") {
     if (p.anonimizadoEm) return null;
@@ -86,6 +94,7 @@ export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, paga
     titulo = "Pedido novo: aceite ou recuse";
     corpo = (
       <>
+        {avisoForma}
         <p>Confira os itens abaixo. Ao aceitar, o pedido vai para a separação e o cliente vê no link dele que a loja já está preparando. Se não der para atender, recuse com o motivo: o cliente é avisado.</p>
         <form action={aceitarPedido}>
           <input type="hidden" name="pedidoId" value={p.id} />
@@ -115,7 +124,39 @@ export function ProximoPasso({ p, pendentes, celular, link, pix, pixOrigem, paga
     );
   } else if (p.status === "EM_SEPARACAO") {
     titulo = "Separe e pese as peças";
-    corpo = <p>Preencha o peso de cada peça em “Separação e pesagem”, logo abaixo. Ao confirmar, o sistema calcula o valor final e dá baixa no estoque.</p>;
+    corpo = (
+      <>
+        {avisoForma}
+        <p>Preencha o peso de cada peça em “Separação e pesagem”, logo abaixo. Ao confirmar, o sistema calcula o valor final e dá baixa no estoque.</p>
+      </>
+    );
+  } else if (p.status === "AGUARDANDO_CLIENTE" && escolhida) {
+    titulo = `Valor pronto · o cliente escolheu ${nomeForma(escolhida)}: cobre agora`;
+    corpo = (
+      <>
+        <p>
+          O cliente já disse no pedido que vai pagar com <b>{nomeForma(escolhida)}</b>. Libere a cobrança de {total} agora:{" "}
+          {escolhida === "PIX" ? "o Pix aparece no link dele e você pode mandar pelo WhatsApp." : escolhida === "CARTAO_LINK" ? "em seguida cole o link do cartão gerado na maquininha." : "ele paga ao receber."}
+        </p>
+        <form action={registrarFormaPeloAtendente} className="linha-botoes">
+          <input type="hidden" name="pedidoId" value={p.id} />
+          <input type="hidden" name="doCliente" value="1" />
+          <button name="forma" value={escolhida} className="btn btn-pri btn-grande">
+            {escolhida === "PIX" ? "Cobrar com Pix agora" : escolhida === "CARTAO_LINK" ? "Cobrar com cartão (link) agora" : `Confirmar: paga ${entrega ? "na entrega" : "na retirada"}`}
+          </button>
+        </form>
+        <div className="linha-botoes">
+          <a className="btn" href={wa(celular, M.valorPronto(nome, p.codigo, total, entrega, link))} target="_blank" rel="noopener noreferrer">
+            Só enviar valor e link para o cliente conferir ↗
+          </a>
+          <BotaoCopiar texto={link} rotulo="Copiar link do pedido" className="btn" />
+        </div>
+        <details className="manual">
+          <summary>O cliente mudou de ideia? Usar outra forma</summary>
+          <DefinirForma id={p.id} entrega={entrega} exceto={escolhida} />
+        </details>
+      </>
+    );
   } else if (p.status === "AGUARDANDO_CLIENTE") {
     titulo = "Envie o valor final ou defina a forma de pagamento";
     corpo = (
